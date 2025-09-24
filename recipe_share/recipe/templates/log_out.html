@@ -1,0 +1,22 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logout Confirmation</title>
+    <link rel="stylesheet" href="{% static 'css/log_out.css' %}">
+</head>
+<body>
+    <div class="overlay">
+        <div class="modal">
+            <h2 class="title">Log Out?</h2>
+            <p class="message">Are you sure you want to log out?</p>
+            <div class="button-container">
+                <button class="btn cancel-btn">Cancel</button>
+                <button class="btn proceed-btn">Proceed</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
