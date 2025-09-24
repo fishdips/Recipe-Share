@@ -4,7 +4,7 @@ __pycache__/
 *.py[cod]
 *$py.class
 # Virtual environment
-venv/
+env/
 # Django-specific files
 *.log
 *.pot
