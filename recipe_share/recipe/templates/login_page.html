@@ -12,7 +12,7 @@
         <div class="login-modal">
             <div class="modal-header">
                 <h2>Welcome Back</h2>
-                <button class="close-btn" id="closeBtn">&times;</button>
+                <a href="{% url 'landing_page' %}" class="close-btn" id="closeBtn">&times;</a>
             </div>
             
             <form class="login-form" id="loginForm">
@@ -36,7 +36,7 @@
                 <button type="submit" class="sign-in-btn">Sign In</button>
                 
                 <p class="signup-link">
-                    Don't have an account? <a href="#" class="signup">Sign up</a>
+                    Don't have an account? <a href="{% url 'signup_page' %}" class="signup">Sign up</a>
                 </p>
             </form>
         </div>
