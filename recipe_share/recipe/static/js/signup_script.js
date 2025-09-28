@@ -16,7 +16,6 @@ document.addEventListener('DOMContentLoaded', function() {
         emailInput.classList.remove('invalid', 'valid');
     });
 
-    // Password validation on input
     passwordInput.addEventListener('blur', function() {
         validatePassword();
         if (confirmPasswordInput.value.trim() !== '') {
@@ -66,6 +65,9 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (isValid) {
             showSuccessMessage();
+            setTimeout(() => {
+                form.submit();
+            }, 1000); 
         } else {
             showError(passwordError, 'Please fix the errors above before submitting.');
         }
@@ -168,15 +170,9 @@ document.addEventListener('DOMContentLoaded', function() {
     function showSuccessMessage() {
         const button = document.querySelector('.create-account-btn');
         const originalText = button.textContent;
-        button.textContent = 'Account Created! Redirecting...';
+        button.textContent = 'Creating Account...';
         button.style.background = 'linear-gradient(45deg, #27ae60, #2ecc71)';
         button.disabled = true;
-        
-        setTimeout(() => {
-            button.textContent = originalText;
-            button.style.background = 'linear-gradient(45deg, #ff8c42, #ff6b1a)';
-            button.disabled = false;
-        }, 3000);
     }
 });
 
@@ -205,7 +201,6 @@ function closeModal() {
     }, 300);
 }
 
-// Add slide out animation keyframes
 const style = document.createElement('style');
 style.textContent = `
     @keyframes slideOut {
@@ -220,6 +215,7 @@ style.textContent = `
     }
 `;
 document.head.appendChild(style);
+
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
         closeModal();

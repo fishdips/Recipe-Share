@@ -15,7 +15,6 @@
                 <button class="close-btn" onclick="closeModal()">&times;</button>
             </div>
             
-            <!-- ✅ Corrected form -->
             <form id="signupForm" class="signup-form" method="POST" action="{% url 'signup_page' %}">
                 {% csrf_token %}
 
