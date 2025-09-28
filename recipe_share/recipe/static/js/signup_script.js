@@ -7,13 +7,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const emailError = document.getElementById('emailError');
     const passwordError = document.getElementById('passwordError');
 
-    // Email validation on input
     emailInput.addEventListener('blur', function() {
         validateEmail();
     });
 
     emailInput.addEventListener('input', function() {
-        // Clear error message while typing
         hideError(emailError);
         emailInput.classList.remove('invalid', 'valid');
     });
@@ -21,7 +19,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Password validation on input
     passwordInput.addEventListener('blur', function() {
         validatePassword();
-        // Also validate password match if confirm password has value
         if (confirmPasswordInput.value.trim() !== '') {
             validatePasswordMatch();
         }
@@ -32,13 +29,11 @@ document.addEventListener('DOMContentLoaded', function() {
         passwordInput.classList.remove('invalid', 'valid');
         confirmPasswordInput.classList.remove('invalid', 'valid');
         
-        // If confirm password has value, recheck match
         if (confirmPasswordInput.value.trim() !== '') {
             setTimeout(validatePasswordMatch, 100);
         }
     });
 
-    // Password confirmation validation
     confirmPasswordInput.addEventListener('blur', function() {
         validatePasswordMatch();
     });
@@ -47,38 +42,31 @@ document.addEventListener('DOMContentLoaded', function() {
         hideError(passwordError);
         confirmPasswordInput.classList.remove('invalid', 'valid');
         
-        // Check match in real time
         if (confirmPasswordInput.value.trim() !== '') {
             setTimeout(validatePasswordMatch, 100);
         }
     });
 
-    // Form submission
     form.addEventListener('submit', function(e) {
         e.preventDefault();
         
         let isValid = true;
         
-        // Validate email
         if (!validateEmail()) {
             isValid = false;
         }
         
-        // Validate password
         if (!validatePassword()) {
             isValid = false;
         }
         
-        // Validate password match
         if (!validatePasswordMatch()) {
             isValid = false;
         }
         
-        // If all validation passes, proceed
         if (isValid) {
             showSuccessMessage();
         } else {
-            // Show general error if validation fails
             showError(passwordError, 'Please fix the errors above before submitting.');
         }
     });
@@ -101,8 +89,8 @@ document.addEventListener('DOMContentLoaded', function() {
             return false;
         }
         
-        if (!email.toLowerCase().endsWith('@cit.edu')) {
-            showError(emailError, 'Email must end with @cit.edu');
+        if (!email.toLowerCase().endsWith('@gmail.com')) {
+            showError(emailError, 'Email must be valid.');
             emailInput.classList.add('invalid');
             emailInput.classList.remove('valid');
             return false;
@@ -141,14 +129,12 @@ document.addEventListener('DOMContentLoaded', function() {
         const password = passwordInput.value;
         const confirmPassword = confirmPasswordInput.value;
         
-        // Don't validate if confirm password is empty
         if (!confirmPassword) {
             confirmPasswordInput.classList.remove('invalid', 'valid');
             hideError(passwordError);
             return true;
         }
         
-        // First check if main password is valid
         if (!password || password.length < 8) {
             showError(passwordError, 'Please enter a valid password first (at least 8 characters)');
             confirmPasswordInput.classList.add('invalid');
@@ -156,7 +142,6 @@ document.addEventListener('DOMContentLoaded', function() {
             return false;
         }
         
-        // Check if passwords match
         if (password !== confirmPassword) {
             showError(passwordError, 'Passwords do not match');
             confirmPasswordInput.classList.add('invalid');
@@ -164,7 +149,6 @@ document.addEventListener('DOMContentLoaded', function() {
             return false;
         }
         
-        // Passwords match and are valid
         hideError(passwordError);
         confirmPasswordInput.classList.remove('invalid');
         confirmPasswordInput.classList.add('valid');
@@ -196,21 +180,19 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// Toggle password visibility function
 function togglePassword(fieldId) {
     const field = document.getElementById(fieldId);
     const toggleIcon = field.parentElement.querySelector('.toggle-password');
     
     if (field.type === 'password') {
         field.type = 'text';
-        toggleIcon.innerHTML = '&#128064;'; // Eye with strike-through (hide icon)
+        toggleIcon.innerHTML = '&#128064;'; 
     } else {
         field.type = 'password';
-        toggleIcon.innerHTML = '&#128065;'; // Eye icon (show icon)
+        toggleIcon.innerHTML = '&#128065;'; 
     }
 }
 
-// Close modal function
 function closeModal() {
     const modal = document.querySelector('.modal');
     const overlay = document.querySelector('.overlay');
@@ -238,15 +220,12 @@ style.textContent = `
     }
 `;
 document.head.appendChild(style);
-
-// Add escape key functionality
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
         closeModal();
     }
 });
 
-// Click outside modal to close
 document.addEventListener('click', function(e) {
     const overlay = document.querySelector('.overlay');
     if (overlay && e.target === overlay) {
