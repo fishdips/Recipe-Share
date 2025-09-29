@@ -1,10 +1,63 @@
+{% load static %}
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Main Page</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RecipeShare</title>
+  <link rel="stylesheet" href="{% static 'css/main_style.css' %}">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.js"></script>
 </head>
 <body>
-    <h1>Welcome, {{ username }}!</h1>
-    <a href="{% url 'log_out' %}">Logout</a>
+  <!-- Header -->
+  <header class="header">
+    <div class="container">
+      <nav class="nav">
+        <div class="logo">
+          <div class="chef-icon"></div>
+          RecipeShare
+        </div>
+        <div class="nav-center">
+          <a href="#" class="home-btn">Home</a>
+        </div>
+        <div class="nav-right">
+          <span class="username-display">{{ username }}</span>
+          <a href="{% url 'log_out' %}" class="logout-btn">Logout</a>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Recipe List View -->
+  <main class="main-content">
+    <div class="container">
+      <section class="search-section">
+        <div class="search-container">
+          <input type="text" class="search-input" id="searchInput" placeholder="Search recipes, ingredients...">
+          <select class="filter-select" id="filterSelect">
+            <option value="all">All</option>
+            <option value="Italian">Italian</option>
+            <option value="Asian">Asian</option>
+            <option value="Dessert">Dessert</option>
+            <option value="Mexican">Mexican</option>
+            <option value="American">American</option>
+          </select>
+        </div>
+      </section>
+
+      <section class="recipes-section">
+        <div class="recipes-header">
+          <h1 class="recipes-title">All Recipes</h1>
+          <div class="recipe-count" id="recipeCount">0 recipes</div>
+        </div>
+
+        <div class="recipes-grid" id="recipesGrid">
+          <div class="loading">Loading recipes...</div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script src="{% static 'js/main_script.js' %}"></script>
 </body>
 </html>
