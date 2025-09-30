@@ -2,7 +2,6 @@
 function closeModal() {
     window.location.href = '/';
 }
-// Toggle password show/hide
 function togglePassword(fieldId) {
     const field = document.getElementById(fieldId);
     const toggleIcon = field.parentElement.querySelector('.toggle-password');
@@ -21,26 +20,22 @@ document.addEventListener('DOMContentLoaded', function () {
     const emailInput = document.getElementById('email');
     const passwordInput = document.getElementById('password');
 
-    // Clear previous invalid state
     function clearInvalid(input) {
         input.parentElement.classList.remove('invalid');
     }
 
-    // Mark input as invalid and shake
     function markInvalid(input) {
-        const container = input.parentElement; // This is the .input-wrapper
+        const container = input.parentElement;
         container.classList.add('invalid');
         
         // Add shake animation class
         container.classList.add('shake');
         
-        // Remove classes after animation completes
         setTimeout(() => {
             container.classList.remove('invalid', 'shake');
         }, 600);
     }
 
-    // Add input event listeners to clear invalid state when user types
     emailInput.addEventListener('input', () => clearInvalid(emailInput));
     passwordInput.addEventListener('input', () => clearInvalid(passwordInput));
 
@@ -50,11 +45,9 @@ document.addEventListener('DOMContentLoaded', function () {
         const email = emailInput.value.trim();
         const password = passwordInput.value;
 
-        // Clear any previous invalid states
         clearInvalid(emailInput);
         clearInvalid(passwordInput);
 
-        // Basic client-side validation
         if (!email) {
             markInvalid(emailInput);
             return;
@@ -96,13 +89,11 @@ document.addEventListener('DOMContentLoaded', function () {
                     markInvalid(passwordInput);
                 }
 
-                // Optional: Display error message to user
                 console.error('Login failed:', data.error);
             }
         } catch (err) {
             console.error("Login error:", err);
             
-            // Wrong email / password
             markInvalid(emailInput);
             markInvalid(passwordInput);
             

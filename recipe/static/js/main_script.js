@@ -1,13 +1,12 @@
-// Initialize Supabase client
+// !! need to hide this key later --------------------------------
 const SUPABASE_URL = 'https://jfzojphxhgpejvffefvo.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impmem9qcGh4aGdwZWp2ZmZlZnZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkwNDU0MDUsImV4cCI6MjA3NDYyMTQwNX0.CDDc3Zja_faSnao3sEMXP_HyFolMMVIhadEsDC5ZS3c';
-
-// Wait for Supabase to load, then create client
+// ----------------------------------------------------------------------
 let supabaseClient;
+let allRecipes = [];
+let currentFilter = 'all';
 
-// Load recipes when page loads
 document.addEventListener('DOMContentLoaded', async () => {
-    // Initialize Supabase client
     if (typeof supabase !== 'undefined') {
         supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     } else {
@@ -22,8 +21,59 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
     
+    setupSearchAndFilter();
+    
     await loadRecipes();
 });
+
+function setupSearchAndFilter() {
+    const searchInput = document.getElementById('searchInput');
+    const filterSelect = document.getElementById('filterSelect');
+    
+    searchInput.addEventListener('input', (e) => {
+        const searchTerm = e.target.value.toLowerCase();
+        filterRecipes(searchTerm, currentFilter);
+    });
+    
+    filterSelect.addEventListener('change', (e) => {
+        currentFilter = e.target.value;
+        const searchTerm = searchInput.value.toLowerCase();
+        filterRecipes(searchTerm, currentFilter);
+    });
+}
+
+function filterRecipes(searchTerm, filter) {
+    let filtered = allRecipes;
+    
+    if (filter === 'my') {
+        if (window.CURRENT_USERNAME) {
+            filtered = filtered.filter(recipe => {
+                // Check if recipe has user data from the join
+                const recipeUsername = recipe.users?.username;
+                return recipeUsername === window.CURRENT_USERNAME;
+            });
+        }
+    } 
+    else if (filter !== 'all') {
+        filtered = filtered.filter(recipe => 
+            recipe.cuisine && recipe.cuisine.toLowerCase() === filter.toLowerCase()
+        );
+    }
+    
+    if (searchTerm) {
+        filtered = filtered.filter(recipe => {
+            const title = recipe.title ? recipe.title.toLowerCase() : '';
+            const description = recipe.description ? recipe.description.toLowerCase() : '';
+            const ingredients = recipe.ingredients ? JSON.stringify(recipe.ingredients).toLowerCase() : '';
+            
+            return title.includes(searchTerm) || 
+                   description.includes(searchTerm) || 
+                   ingredients.includes(searchTerm);
+        });
+    }
+    
+    displayRecipes(filtered);
+}
 
 async function loadRecipes() {
     const recipesGrid = document.getElementById('recipesGrid');
@@ -31,10 +81,14 @@ async function loadRecipes() {
     try {
         console.log('Fetching recipes from Supabase...');
         
-        // Fetch all recipes from Supabase
         const { data: recipes, error } = await supabaseClient
             .from('recipes')
-            .select('*')
+            .select(`
+                *,
+                users!recipes_author_id_fkey (
+                    username
+                )
+            `)
             .order('created_at', { ascending: false });
 
         console.log('Recipes data:', recipes);
@@ -52,26 +106,9 @@ async function loadRecipes() {
             return;
         }
 
-        // Clear loading message
-        recipesGrid.innerHTML = '';
-
-        // Check if there are any recipes
-        if (!recipes || recipes.length === 0) {
-            recipesGrid.innerHTML = `
-                <div class="no-recipes">
-                    <div class="no-recipes-icon">🍳</div>
-                    <h3>No recipes yet</h3>
-                    <p>Be the first to share a recipe!</p>
-                </div>
-            `;
-            return;
-        }
-
-        // Display each recipe
-        recipes.forEach(recipe => {
-            const recipeCard = createRecipeCard(recipe);
-            recipesGrid.appendChild(recipeCard);
-        });
+        allRecipes = recipes || [];
+        
+        displayRecipes(allRecipes);
 
     } catch (err) {
         console.error('Error loading recipes:', err);
@@ -85,14 +122,49 @@ async function loadRecipes() {
     }
 }
 
+function displayRecipes(recipes) {
+    const recipesGrid = document.getElementById('recipesGrid');
+    const recipeCount = document.getElementById('recipeCount');
+    const recipesTitle = document.querySelector('.recipes-title');
+    
+    recipesGrid.innerHTML = '';
+    
+    recipeCount.textContent = `${recipes.length} recipe${recipes.length !== 1 ? 's' : ''}`;
+    
+    if (currentFilter === 'my') {
+        recipesTitle.textContent = 'My Recipes';
+    } else if (currentFilter === 'all') {
+        recipesTitle.textContent = 'All Recipes';
+    } else {
+        recipesTitle.textContent = `${currentFilter} Recipes`;
+    }
+    
+    if (!recipes || recipes.length === 0) {
+        recipesGrid.innerHTML = `
+            <div class="no-recipes">
+                <div class="no-recipes-icon">🍳</div>
+                <h3>No recipes found</h3>
+                <p>${currentFilter === 'my' ? 'You haven\'t added any recipes yet!' : 'Be the first to share a recipe!'}</p>
+            </div>
+        `;
+        return;
+    }
+
+    recipes.forEach(recipe => {
+        const recipeCard = createRecipeCard(recipe);
+        recipesGrid.appendChild(recipeCard);
+    });
+}
+
 function createRecipeCard(recipe) {
     const card = document.createElement('div');
     card.className = 'recipe-card';
     
-    // Format cook time
     const cookTime = recipe.cook_time ? `${recipe.cook_time} min` : 'N/A';
     
-    // Create card HTML
+    const recipeUsername = recipe.users?.username;
+    const isMyRecipe = window.CURRENT_USERNAME && recipeUsername === window.CURRENT_USERNAME;
+    
     card.innerHTML = `
         ${recipe.cover_photo_url ? 
             `<img src="${recipe.cover_photo_url}" alt="${recipe.title}" class="recipe-image">` : 
@@ -116,6 +188,18 @@ function createRecipeCard(recipe) {
                     </div>` : 
                     ''
                 }
+                ${isMyRecipe ? 
+                    `<div class="meta-item">
+                        <span class="meta-icon">👤</span>
+                        <span>Your Recipe</span>
+                    </div>` : 
+                    recipeUsername ? 
+                    `<div class="meta-item">
+                        <span class="meta-icon">👤</span>
+                        <span>By ${recipeUsername}</span>
+                    </div>` : 
+                    ''
+                }
             </div>
             <div class="recipe-tags">
                 ${recipe.category ? `<span class="tag">${recipe.category}</span>` : ''}
@@ -123,16 +207,16 @@ function createRecipeCard(recipe) {
         </div>
     `;
     
-    // Add click event (you can expand this later for recipe details)
     card.addEventListener('click', () => {
         console.log('Clicked recipe:', recipe);
-        // TODO: Open recipe details modal or navigate to recipe page
+        // For recipe clicks ----------------------------
+        alert(`Recipe: ${recipe.title}\n\nNO Click functionality`);
     });
     
     return card;
 }
 
-// Helper function to format date
+//For date functionality
 function formatDate(dateString) {
     const date = new Date(dateString);
     const now = new Date();

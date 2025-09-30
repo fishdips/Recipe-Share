@@ -72,7 +72,7 @@ body {
 .nav-center {
     display: flex;
     align-items: center;
-    gap: 20px;
+    gap: 12px;
 }
 
 /* Home button styling */
@@ -86,11 +86,33 @@ body {
     align-items: center;
     gap: 8px;
     transition: all 0.3s ease;
+    font-weight: 500;
 }
 
 .home-btn:hover {
     background: #e76f51;
     transform: translateY(-2px);
+}
+
+/* Add Recipe button styling */
+.add-recipe-btn {
+    background: #ff6b35;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 8px;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(255, 107, 53, 0.3);
+}
+
+.add-recipe-btn:hover {
+    background: #e55a2b;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 107, 53, 0.4);
 }
 
 /* Right side navigation */
@@ -109,17 +131,19 @@ body {
 
 /* Logout button styling */
 .logout-btn {
-    background: #ff6b35;
-    color: white;
+    background: transparent;
+    color: #ff6b35;
     padding: 10px 20px;
     border-radius: 8px;
     text-decoration: none;
     transition: all 0.3s ease;
     font-weight: 500;
+    border: 2px solid #ff6b35;
 }
 
 .logout-btn:hover {
-    background: #e55a2b;
+    background: #ff6b35;
+    color: white;
     transform: translateY(-2px);
 }
 
@@ -162,6 +186,7 @@ body {
     font-size: 16px;
     cursor: pointer;
     transition: all 0.3s ease;
+    min-width: 180px;
 }
 
 .filter-select:focus {
@@ -188,6 +213,7 @@ body {
 .recipe-count {
     color: #666;
     font-size: 16px;
+    font-weight: 500;
 }
 
 /* Responsive grid layout for recipe cards */
@@ -230,7 +256,7 @@ body {
     width: 100%;
     height: 200px;
     object-fit: cover;
-    background: #f8f9fa;
+    background: linear-gradient(135deg, #ffd4b3 0%, #ffeedd 100%);
 }
 
 /* Recipe card content area */
@@ -238,74 +264,48 @@ body {
     padding: 24px;
 }
 
-/* Recipe metadata (tags, difficulty) */
+/* Recipe metadata container */
 .recipe-meta {
     display: flex;
-    gap: 12px;
-    margin-bottom: 16px;
+    gap: 16px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
 }
 
-/* Recipe category tags */
-.recipe-tag {
-    padding: 6px 12px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-/* Tag color variations */
-.tag-italian { 
-    background: #e8f4f8; 
-    color: #2c5282; 
-}
-
-.tag-asian { 
-    background: #f0f8e8; 
-    color: #2d5016; 
-}
-
-.tag-dessert { 
-    background: #fef3e2; 
-    color: #c05621; 
-}
-
-.tag-mexican {
-    background: #fff0e6;
-    color: #c05621;
-}
-
-.tag-american {
-    background: #e6f3ff;
-    color: #2c5282;
-}
-
-/* Difficulty indicator */
-.difficulty {
-    padding: 6px 12px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: 500;
+/* Individual meta item */
+.meta-item {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 6px;
+    color: #666;
+    font-size: 14px;
 }
 
-/* Difficulty level colors */
-.difficulty-medium {
-    background: #fff3cd;
-    color: #856404;
+.meta-icon {
+    font-size: 16px;
 }
 
-.difficulty-easy {
-    background: #d1ecf1;
-    color: #0c5460;
+/* Recipe tags container */
+.recipe-tags {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+}
+
+/* Individual tag styling */
+.tag {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    background: #ffd4b3;
+    color: #ff6b35;
 }
 
 /* Recipe title styling */
 .recipe-title {
-    font-size: 24px;
+    font-size: 22px;
     font-weight: 600;
     margin-bottom: 12px;
     color: #2d3436;
@@ -316,8 +316,12 @@ body {
 .recipe-description {
     color: #666;
     font-size: 15px;
-    line-height: 1.5;
-    margin-bottom: 20px;
+    line-height: 1.6;
+    margin-bottom: 16px;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
 }
 
 /* No recipes message */
@@ -370,12 +374,20 @@ body {
     }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
     .nav {
-        flex-direction: column;
-        gap: 16px;
+        flex-wrap: wrap;
+        gap: 12px;
     }
     
+    .nav-center {
+        order: 3;
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 640px) {
     .search-container {
         flex-direction: column;
     }
@@ -392,5 +404,10 @@ body {
     
     .recipes-title {
         font-size: 28px;
+    }
+    
+    .add-recipe-btn, .home-btn {
+        padding: 8px 16px;
+        font-size: 14px;
     }
 }

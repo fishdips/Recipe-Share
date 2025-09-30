@@ -22,9 +22,13 @@ def log_out(request):
 
 def main_page(request):
     return render(request, 'main_page.html', {'username': request.user.username})
+    
 
 def signup_page(request):
     return render(request, 'signup_page.html')
+
+def create_page(request):
+    return render(request, 'create_page.html', {'username': request.user.username})
 
 @csrf_exempt
 def login_page(request):

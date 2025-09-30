@@ -9,16 +9,20 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.js"></script>
 </head>
 <body>
-  <!-- Header -->
   <header class="header">
     <div class="container">
       <nav class="nav">
         <div class="logo">
-          <div class="chef-icon"></div>
+          <div class="chef-icon">👨‍🍳</div>
           RecipeShare
         </div>
         <div class="nav-center">
-          <a href="#" class="home-btn">Home</a>
+          <a href="{% url 'main_page' %}" class="home-btn">
+            <span>🏠</span> Home
+          </a>
+          <a href="{% url 'create_page' %}" class="add-recipe-btn">
+            <span>➕</span> Add Recipe
+          </a>
         </div>
         <div class="nav-right">
           <span class="username-display">{{ username }}</span>
@@ -28,14 +32,14 @@
     </div>
   </header>
 
-  <!-- Recipe List View -->
   <main class="main-content">
     <div class="container">
       <section class="search-section">
         <div class="search-container">
           <input type="text" class="search-input" id="searchInput" placeholder="Search recipes, ingredients...">
           <select class="filter-select" id="filterSelect">
-            <option value="all">All</option>
+            <option value="all">All Recipes</option>
+            <option value="my">My Recipes</option>
             <option value="Italian">Italian</option>
             <option value="Asian">Asian</option>
             <option value="Dessert">Dessert</option>
@@ -58,6 +62,10 @@
     </div>
   </main>
 
+  <!-- Pass username -->
+  <script>
+    window.CURRENT_USERNAME = "{{ username }}";
+  </script>
   <script src="{% static 'js/main_script.js' %}"></script>
 </body>
 </html>
