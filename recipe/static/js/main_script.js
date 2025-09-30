@@ -48,9 +48,8 @@ function filterRecipes(searchTerm, filter) {
     if (filter === 'my') {
         if (window.CURRENT_USERNAME) {
             filtered = filtered.filter(recipe => {
-                // Check if recipe has user data from the join
-                const recipeUsername = recipe.users?.username;
-                return recipeUsername === window.CURRENT_USERNAME;
+                const recipeName = recipe.users?.full_name;
+                return recipeName === window.CURRENT_USERNAME;
             });
         }
     } 
@@ -86,7 +85,8 @@ async function loadRecipes() {
             .select(`
                 *,
                 users!recipes_author_id_fkey (
-                    username
+                    full_name,
+                    email
                 )
             `)
             .order('created_at', { ascending: false });
@@ -162,8 +162,8 @@ function createRecipeCard(recipe) {
     
     const cookTime = recipe.cook_time ? `${recipe.cook_time} min` : 'N/A';
     
-    const recipeUsername = recipe.users?.username;
-    const isMyRecipe = window.CURRENT_USERNAME && recipeUsername === window.CURRENT_USERNAME;
+    const recipeFullName = recipe.users?.full_name;
+    const isMyRecipe = window.CURRENT_USERNAME && recipeFullName === window.CURRENT_USERNAME;
     
     card.innerHTML = `
         ${recipe.cover_photo_url ? 
@@ -193,10 +193,10 @@ function createRecipeCard(recipe) {
                         <span class="meta-icon">👤</span>
                         <span>Your Recipe</span>
                     </div>` : 
-                    recipeUsername ? 
+                    recipeFullName ? 
                     `<div class="meta-item">
                         <span class="meta-icon">👤</span>
-                        <span>By ${recipeUsername}</span>
+                        <span>By ${recipeFullName}</span>
                     </div>` : 
                     ''
                 }
