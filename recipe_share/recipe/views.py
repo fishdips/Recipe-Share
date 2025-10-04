@@ -111,12 +111,26 @@ def login_page(request):
 
     return render(request, "login_page.html")
 
+from django.contrib.auth import logout
+from django.shortcuts import redirect, render
+from django.http import JsonResponse
+
 def log_out(request):
     if request.method == "POST":
+        # Destroy Django session
         logout(request)
-        return redirect("login_page")   
+        request.session.flush()   # extra cleanup
 
+        # Return JSON if it’s an API request
+        if request.headers.get("x-requested-with") == "XMLHttpRequest":
+            return JsonResponse({"success": True, "redirect_url": "/login/"})
+
+        # Normal flow → redirect to login page
+        return redirect("login_page")
+
+    # GET → show confirmation modal
     return render(request, "log_out.html")
+
 
 
 def signup_page(request):
