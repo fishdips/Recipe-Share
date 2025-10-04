@@ -114,7 +114,7 @@ def login_page(request):
 def log_out(request):
     if request.method == "POST":
         logout(request)
-        return redirect("landing_page")   
+        return redirect("login_page")   
 
     return render(request, "log_out.html")
 
