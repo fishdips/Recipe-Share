@@ -9,6 +9,7 @@ from django.views.decorators.csrf import csrf_exempt
 import json
 from django.http import JsonResponse
 from supabase import create_client, Client
+from django.views.decorators.csrf import csrf_exempt
 
 # Initialize Supabase client -- need to hide this later TT____TT
 SUPABASE_URL = "https://jfzojphxhgpejvffefvo.supabase.co"
@@ -110,10 +111,13 @@ def login_page(request):
 
     return render(request, "login_page.html")
 
-
 def log_out(request):
-    logout(request)
-    return render(request, 'log_out.html')
+    if request.method == "POST":
+        logout(request)
+        return redirect("landing_page")   
+
+    return render(request, "log_out.html")
+
 
 def signup_page(request):
     if request.method == "POST":

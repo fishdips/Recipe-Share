@@ -87,7 +87,7 @@ DATABASES = {
     "default": dj_database_url.config(
         default="sqlite:///db.sqlite3",  # Fallback to SQLite
         conn_max_age=600,
-        ssl_require=False,  # SQLite doesn't use SSL
+        ssl_require=True,  # SQLite doesn't use SSL
     )
     # "default": dj_database_url.config(
     #     default="sqlite:///db.sqlite3",  # fallback to sqlite
