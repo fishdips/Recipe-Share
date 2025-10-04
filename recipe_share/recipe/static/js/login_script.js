@@ -1,183 +1,103 @@
-document.addEventListener('DOMContentLoaded', function() {
-    // Get DOM elements
-    const loginModal = document.querySelector('.login-modal');
-    const loginOverlay = document.querySelector('.login-overlay');
-    const closeBtn = document.getElementById('closeBtn');
+
+function closeModal() {
+    window.location.href = '/';
+}
+function togglePassword(fieldId) {
+    const field = document.getElementById(fieldId);
+    const toggleIcon = field.parentElement.querySelector('.toggle-password');
+
+    if (field.type === 'password') {
+        field.type = 'text';
+        toggleIcon.innerHTML = '&#128064;';
+    } else {
+        field.type = 'password';
+        toggleIcon.innerHTML = '👁️'; 
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function () {
     const loginForm = document.getElementById('loginForm');
     const emailInput = document.getElementById('email');
     const passwordInput = document.getElementById('password');
-    const togglePassword = document.getElementById('togglePassword');
-    const signInBtn = document.querySelector('.sign-in-btn');
-    
-    // Close modal functionality
-    function closeModal() {
-        loginOverlay.style.opacity = '0';
-        loginModal.style.transform = 'translateY(-50px) scale(0.95)';
+
+    function clearInvalid(input) {
+        input.parentElement.classList.remove('invalid');
+    }
+
+    function markInvalid(input) {
+        const container = input.parentElement;
+        container.classList.add('invalid');
+        
+        // Add shake animation class
+        container.classList.add('shake');
+        
         setTimeout(() => {
-            loginOverlay.style.display = 'none';
-        }, 300);
+            container.classList.remove('invalid', 'shake');
+        }, 600);
     }
-    
-    // Close button event listener
-    closeBtn.addEventListener('click', closeModal);
-    
-    // Click outside modal to close
-    loginOverlay.addEventListener('click', function(e) {
-        if (e.target === loginOverlay) {
-            closeModal();
-        }
-    });
-    
-    // ESC key to close modal
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') {
-            closeModal();
-        }
-    });
-    
-    // Toggle password visibility
-    togglePassword.addEventListener('click', function() {
-        const isPassword = passwordInput.type === 'password';
-        passwordInput.type = isPassword ? 'text' : 'password';
-        togglePassword.textContent = isPassword ? '🙈' : '👁';
-    });
-    
-    // Form validation
-    function validateEmail(email) {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        return emailRegex.test(email);
-    }
-    
-    function validatePassword(password) {
-        return password.length >= 6;
-    }
-    
-    function showError(input, message) {
-        // Remove existing error
-        const existingError = input.parentNode.parentNode.querySelector('.error-message');
-        if (existingError) {
-            existingError.remove();
-        }
-        
-        // Add error message
-        const errorDiv = document.createElement('div');
-        errorDiv.className = 'error-message';
-        errorDiv.textContent = message;
-        errorDiv.style.color = '#ff4444';
-        errorDiv.style.fontSize = '12px';
-        errorDiv.style.marginTop = '4px';
-        
-        input.parentNode.parentNode.appendChild(errorDiv);
-        input.style.borderColor = '#ff4444';
-    }
-    
-    function clearError(input) {
-        const existingError = input.parentNode.parentNode.querySelector('.error-message');
-        if (existingError) {
-            existingError.remove();
-        }
-        input.style.borderColor = '#e1e5e9';
-    }
-    
-    // Real-time validation
-    emailInput.addEventListener('blur', function() {
-        if (emailInput.value && !validateEmail(emailInput.value)) {
-            showError(emailInput, 'Please enter a valid email address');
-        } else {
-            clearError(emailInput);
-        }
-    });
-    
-    emailInput.addEventListener('input', function() {
-        if (emailInput.style.borderColor === 'rgb(255, 68, 68)') {
-            clearError(emailInput);
-        }
-    });
-    
-    passwordInput.addEventListener('blur', function() {
-        if (passwordInput.value && !validatePassword(passwordInput.value)) {
-            showError(passwordInput, 'Password must be at least 6 characters long');
-        } else {
-            clearError(passwordInput);
-        }
-    });
-    
-    passwordInput.addEventListener('input', function() {
-        if (passwordInput.style.borderColor === 'rgb(255, 68, 68)') {
-            clearError(passwordInput);
-        }
-    });
-    
-    // Form submission
-    loginForm.addEventListener('submit', function(e) {
+
+    emailInput.addEventListener('input', () => clearInvalid(emailInput));
+    passwordInput.addEventListener('input', () => clearInvalid(passwordInput));
+
+    loginForm.addEventListener('submit', async function (e) {
         e.preventDefault();
-        
+
         const email = emailInput.value.trim();
         const password = passwordInput.value;
-        
-        // Clear previous errors
-        clearError(emailInput);
-        clearError(passwordInput);
-        
-        let isValid = true;
-        
-        // Validate email
+
+        clearInvalid(emailInput);
+        clearInvalid(passwordInput);
+
         if (!email) {
-            showError(emailInput, 'Email is required');
-            isValid = false;
-        } else if (!validateEmail(email)) {
-            showError(emailInput, 'Please enter a valid email address');
-            isValid = false;
-        }
-        
-        // Validate password
-        if (!password) {
-            showError(passwordInput, 'Password is required');
-            isValid = false;
-        } else if (!validatePassword(password)) {
-            showError(passwordInput, 'Password must be at least 6 characters long');
-            isValid = false;
-        }
-        
-        if (!isValid) {
+            markInvalid(emailInput);
             return;
         }
-        
-        // Show loading state
-        signInBtn.textContent = 'Signing In...';
-        signInBtn.classList.add('loading');
-        signInBtn.disabled = true;
-        
-        // Simulate API call
-        setTimeout(() => {
-            // Reset button state
-            signInBtn.textContent = 'Sign In';
-            signInBtn.classList.remove('loading');
-            signInBtn.disabled = false;
+
+        if (!password) {
+            markInvalid(passwordInput);
+            return;
+        }
+
+        try {
+            const response = await fetch(loginForm.action || window.location.href, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-Requested-With": "XMLHttpRequest",
+                    "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]")?.value || ""
+                },
+                body: JSON.stringify({ email, password })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                // Successful login
+                const redirectUrl = data.redirect_url || '/main_page/';
+                window.location.href = redirectUrl;
+            } else {
+                // Login failed
+                const errorMessage = data.error ? data.error.toLowerCase() : '';
+                
+                if (errorMessage.includes('password') || errorMessage.includes('incorrect')) {
+                    // Wrong password
+                    markInvalid(passwordInput);
+                } else if (errorMessage.includes('email') || errorMessage.includes('user') || errorMessage.includes('account')) {
+                    markInvalid(emailInput);
+                } else {
+                    markInvalid(emailInput);
+                    markInvalid(passwordInput);
+                }
+
+                console.error('Login failed:', data.error);
+            }
+        } catch (err) {
+            console.error("Login error:", err);
             
-            // For demo purposes - replace with actual authentication logic
-            alert(`Login attempt with:\nEmail: ${email}\nPassword: ${'*'.repeat(password.length)}`);
+            markInvalid(emailInput);
+            markInvalid(passwordInput);
             
-            // On successful login, you might want to:
-            // window.location.href = '/dashboard';
-            // or closeModal();
-        }, 2000);
+            alert('Connection error. Please check your internet connection and try again.');
+        }
     });
-    
-    // Handle "Sign up" link
-    document.querySelector('.signup').addEventListener('click', function(e) {
-        e.preventDefault();
-        alert('Sign up functionality would be implemented here');
-    });
-    
-    // Handle "Forgot Password" link
-    document.querySelector('.forgot-password').addEventListener('click', function(e) {
-        e.preventDefault();
-        alert('Forgot password functionality would be implemented here');
-    });
-    
-    // Auto-focus email input when modal opens
-    setTimeout(() => {
-        emailInput.focus();
-    }, 100);
 });
