@@ -1,0 +1,105 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Recipe</title>
+    <link rel="stylesheet" href="{% static 'css/create_style.css' %}">
+</head>
+<body>
+    <div class="container">
+        <h1 class="page-title">Add New Recipe</h1>
+        
+        <div class="content-wrapper">
+            <div class="form-section">
+                <input type="text" id="title" placeholder="Recipe Title" class="input-field">
+
+                <textarea id="description" placeholder="Description" class="input-field textarea-field"></textarea>
+
+                <div class="image-section">
+                    <label>Recipe Image</label>
+                    <div class="image-tabs">
+                        <button class="tab-btn active" data-tab="upload" type="button">Upload</button>
+                        <button class="tab-btn" data-tab="url" type="button">URL</button>
+                        <button class="tab-btn" data-tab="stock" type="button">Stock Photos</button>
+                    </div>
+                    <div class="image-upload-area">
+                        <div id="uploadTab" class="tab-content active">
+                            <div class="drop-zone">
+                                <p>Drop your images here</p>
+                                <button class="choose-file-btn" type="button">Choose File</button>
+                                <input type="file" id="fileInput" accept="image/*" style="display: none;">
+                            </div>
+                        </div>
+                        <div id="urlTab" class="tab-content">
+                            <input type="url" id="imageUrl" placeholder="Enter image URL" class="input-field">
+                        </div>
+                        <div id="stockTab" class="tab-content">
+                            <p style="color: #666;">Stock photos integration coming soon</p>
+                        </div>
+                    </div>
+                    <div class="category-cuisine">
+                        <input type="text" id="category" placeholder="Category" class="half-input">
+                        <input type="text" id="cuisine" placeholder="Cuisine" class="half-input">
+                    </div>
+                </div>
+
+                <div class="details-section">
+                    <label>Recipe Details</label>
+                    <div class="details-grid">
+                        <input type="number" id="cookTime" placeholder="Cook Time (mins)" class="detail-input">
+                        <input type="text" id="servings" placeholder="Servings" class="detail-input">
+                        <input type="text" id="prepTime" placeholder="Prep Time" class="detail-input">
+                        <input type="text" id="difficulty" placeholder="Difficulty" class="detail-input">
+                    </div>
+                </div>
+
+                <div class="ingredients-section">
+                    <div class="section-header">
+                        <label>Ingredients</label>
+                        <button class="add-btn" id="addIngredientBtn" type="button">+ Add Ingredient</button>
+                    </div>
+                    <div id="ingredientsContainer" class="ingredients-grid">
+                        <input type="text" class="ingredient-input" placeholder="Ingredient 1">
+                        <input type="text" class="ingredient-input" placeholder="Ingredient 2">
+                        <input type="text" class="ingredient-input" placeholder="Ingredient 3">
+                        <input type="text" class="ingredient-input" placeholder="Ingredient 4">
+                    </div>
+                </div>
+
+                <div class="instructions-section">
+                    <div class="section-header">
+                        <label>Instructions</label>
+                        <button class="add-btn" id="addStepBtn" type="button">+ Add Step</button>
+                    </div>
+                    <div id="instructionsContainer">
+                        <textarea class="instruction-input" placeholder="Step 1"></textarea>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="cancel-btn" id="cancelBtn" type="button">Cancel</button>
+                    <button class="submit-btn" id="submitBtn" type="button">Add Recipe</button>
+                </div>
+            </div>
+
+            <div class="preview-section">
+                <h2>Your Recipes</h2>
+                <div id="recipeGrid" class="recipe-grid">
+                    <div class="loading">Loading recipes...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+  window.CURRENT_USERNAME = "{{ username }}";
+  window.CURRENT_EMAIL = "{{ email }}";
+  console.log("CURRENT_USERNAME:", window.CURRENT_USERNAME);
+  console.log("CURRENT_EMAIL:", window.CURRENT_EMAIL);
+</script>
+<script src="{% static 'js/create_script.js' %}"></script>
+</body>
+</html>
