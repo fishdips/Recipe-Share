@@ -10,12 +10,19 @@ import json
 from django.http import JsonResponse
 from supabase import create_client, Client
 from django.views.decorators.csrf import csrf_exempt
+from django.shortcuts import redirect, render
 
 # Initialize Supabase client -- need to hide this later TT____TT
 SUPABASE_URL = "https://jfzojphxhgpejvffefvo.supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impmem9qcGh4aGdwZWp2ZmZlZnZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkwNDU0MDUsImV4cCI6MjA3NDYyMTQwNX0.CDDc3Zja_faSnao3sEMXP_HyFolMMVIhadEsDC5ZS3c"
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 # ------------------------------------------------------------------
+def recipe_detail(request, recipe_id):
+    """View for displaying recipe details to guest users"""
+    context = {
+        'recipe_id': recipe_id
+    }
+    return render(request, 'recipedetail_page.html', context)
 
 def landing_page(request):
     return render(request, 'landing_page.html')
@@ -111,9 +118,6 @@ def login_page(request):
 
     return render(request, "login_page.html")
 
-from django.contrib.auth import logout
-from django.shortcuts import redirect, render
-from django.http import JsonResponse
 
 def log_out(request):
     if request.method == "POST":
@@ -150,7 +154,7 @@ def signup_page(request):
             messages.error(request, "Email already registered.")
             return redirect("signup_page")
 
-        # Save new user
+        
         Users.objects.create(
             full_name=full_name,
             email=email,
@@ -158,7 +162,7 @@ def signup_page(request):
         )
 
         messages.success(request, "Account created successfully! Please log in.")
-        return redirect("login_page")  # ✅ Go to login page after success
+        return redirect("login_page")  
 
     return render(request, "signup_page.html")
 

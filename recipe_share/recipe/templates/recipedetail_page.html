@@ -1,0 +1,45 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recipe Details - RecipeShare</title>
+  <link rel="stylesheet" href="{% static 'css/recipedetail_style.css' %}">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.js"></script>
+</head>
+<body>
+
+  <header class="header">
+    <div class="container">
+      <nav class="nav">
+        <div class="logo">
+          <div class="chef-icon"></div>
+          RecipeShare
+        </div>
+        <div class="nav-center">
+          <a href="{% url 'landing_page' %}" class="home-btn">Home</a>
+        </div>
+        <div class="nav-right">
+          <a href="{% url 'login_page' %}" class="login-btn">Login</a>
+          <a href="{% url 'signup_page' %}" class="signup-btn">Sign Up</a>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <div class="container">
+      <a href="{% url 'landing_page' %}" class="back-btn">
+        <span class="arrow">←</span> Back to Home
+      </a>
+
+      <div class="recipe-detail-container" id="recipeDetailContainer">
+        <div class="loading">Loading recipe...</div>
+      </div>
+    </div>
+  </main>
+
+  <script src="{% static 'js/recipedetail_script.js' %}"></script>
+</body>
+</html>
