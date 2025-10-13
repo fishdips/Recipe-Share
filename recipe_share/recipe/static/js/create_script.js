@@ -63,12 +63,35 @@ addStepBtn.addEventListener("click", () => {
   instructionsContainer.appendChild(textarea);
 });
 
-// File upload handler (not yet implemented)
+// Handle file upload
 fileInput.addEventListener("change", async (e) => {
   const file = e.target.files[0];
-  if (file) {
-    console.log("File selected:", file.name);
-    alert("🚧 File upload not implemented yet");
+  if (!file) return;
+
+  try {
+    const fileName = `${Date.now()}_${file.name}`;
+    const filePath = `uploads/${fileName}`;
+
+    const { data, error } = await supabase.storage
+      .from("recipe-images") // ← bucket name
+      .upload(filePath, file);
+
+    if (error) throw error;
+
+    const { data: publicUrlData } = supabase.storage
+      .from("recipe-images")
+      .getPublicUrl(filePath);
+
+    const imageUrl = publicUrlData.publicUrl;
+
+
+    document.getElementById("imageUrl").value = imageUrl;
+
+    alert("✅ Image uploaded successfully!");
+    console.log("Image URL:", imageUrl);
+  } catch (error) {
+    console.error("Error uploading file:", error);
+    alert("❌ Failed to upload image: " + error.message);
   }
 });
 
