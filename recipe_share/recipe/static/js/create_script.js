@@ -63,37 +63,170 @@ addStepBtn.addEventListener("click", () => {
   instructionsContainer.appendChild(textarea);
 });
 
+// Helper function: Upload via REST API (most reliable method)
+async function uploadViaFetch(bucket, filePath, file) {
+  try {
+    const response = await fetch(
+      `${SUPABASE_URL}/storage/v1/object/${bucket}/${filePath}`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${SUPABASE_KEY}`,
+          'Content-Type': file.type,
+          'x-upsert': 'false'
+        },
+        body: file
+      }
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Upload response error:', errorText);
+      throw new Error(`Upload failed: ${response.status} - ${errorText}`);
+    }
+
+    const result = await response.json();
+    console.log('Upload successful via REST API:', result);
+    return { data: result, error: null };
+  } catch (err) {
+    console.error('REST API upload error:', err);
+    return { data: null, error: err };
+  }
+}
+
 // Handle file upload
 fileInput.addEventListener("change", async (e) => {
   const file = e.target.files[0];
   if (!file) return;
 
+  // Validate file type
+  if (!file.type.startsWith('image/')) {
+    alert("❌ Please select an image file (JPG, PNG, GIF, etc.)");
+    fileInput.value = "";
+    return;
+  }
+
+  // Validate file size (e.g., max 5MB)
+  const maxSize = 5 * 1024 * 1024; // 5MB
+  if (file.size > maxSize) {
+    alert("❌ File size too large. Please select an image under 5MB.");
+    fileInput.value = "";
+    return;
+  }
+
+  if (!supabase) {
+    console.error("Supabase client not initialized. Make sure the Supabase library is loaded in the page.");
+    alert("❌ Storage client not available. Check console for details.");
+    return;
+  }
+
+  // Show loading state
+  const originalBtnText = chooseFileBtn.textContent;
+  chooseFileBtn.textContent = "Uploading...";
+  chooseFileBtn.disabled = true;
+
   try {
-    const fileName = `${Date.now()}_${file.name}`;
+    const fileName = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
     const filePath = `uploads/${fileName}`;
+    const bucket = "recipe-images";
 
-    const { data, error } = await supabase.storage
-      .from("recipe-images") // ← bucket name
-      .upload(filePath, file);
+    console.log("Uploading file:", fileName);
+    console.log("File size:", file.size, "bytes");
+    console.log("File type:", file.type);
 
-    if (error) throw error;
+    // Use REST API directly (most reliable)
+    console.log("Uploading via REST API...");
+    const uploadResult = await uploadViaFetch(bucket, filePath, file);
 
-    const { data: publicUrlData } = supabase.storage
-      .from("recipe-images")
-      .getPublicUrl(filePath);
+    // Check for upload errors
+    if (uploadResult?.error) {
+      throw uploadResult.error;
+    }
 
-    const imageUrl = publicUrlData.publicUrl;
+    console.log("Upload successful:", uploadResult.data);
 
+    // Get public URL
+    let imageUrl;
+    try {
+      const { data: publicUrlData } = supabase.storage
+        .from(bucket)
+        .getPublicUrl(filePath);
+      
+      imageUrl = publicUrlData.publicUrl;
+    } catch (urlErr) {
+      // Fallback: construct URL manually
+      console.warn("Could not get publicUrl via client, constructing manually:", urlErr);
+      imageUrl = `${SUPABASE_URL}/storage/v1/object/public/${bucket}/${filePath}`;
+    }
 
+    // Set the image URL in the input field
     document.getElementById("imageUrl").value = imageUrl;
-
+    
+    // Show success message
     alert("✅ Image uploaded successfully!");
     console.log("Image URL:", imageUrl);
+
+    // Show preview
+    showImagePreview(imageUrl);
+
   } catch (error) {
     console.error("Error uploading file:", error);
-    alert("❌ Failed to upload image: " + error.message);
+    alert("❌ Failed to upload image: " + (error.message || error));
+    fileInput.value = "";
+  } finally {
+    // Restore button state
+    chooseFileBtn.textContent = originalBtnText;
+    chooseFileBtn.disabled = false;
   }
 });
+
+//Show image preview
+function showImagePreview(url) {
+  // Remove existing preview if any
+  const existingPreview = document.querySelector('.image-preview');
+  if (existingPreview) {
+    existingPreview.remove();
+  }
+
+  // Create preview element
+  const preview = document.createElement('div');
+  preview.className = 'image-preview';
+  preview.style.cssText = 'margin-top: 10px; text-align: center;';
+  preview.innerHTML = `
+    <img src="${url}" alt="Preview" style="max-width: 200px; max-height: 200px; border-radius: 8px; border: 2px solid #ddd;">
+    <p style="margin-top: 5px; font-size: 12px; color: #666;">Preview</p>
+  `;
+
+  // Insert preview after the upload area
+  const uploadArea = document.querySelector('.image-upload-area');
+  if (uploadArea) {
+    uploadArea.parentNode.insertBefore(preview, uploadArea.nextSibling);
+  }
+}
+
+// Optional: Show image preview
+function showImagePreview(url) {
+  // Remove existing preview if any
+  const existingPreview = document.querySelector('.image-preview');
+  if (existingPreview) {
+    existingPreview.remove();
+  }
+
+  // Create preview element
+  const preview = document.createElement('div');
+  preview.className = 'image-preview';
+  preview.style.cssText = 'margin-top: 10px; text-align: center;';
+  preview.innerHTML = `
+    <img src="${url}" alt="Preview" style="max-width: 200px; max-height: 200px; border-radius: 8px; border: 2px solid #ddd;">
+    <p style="margin-top: 5px; font-size: 12px; color: #666;">Preview</p>
+  `;
+
+  // Insert preview after the upload area
+  const uploadArea = document.querySelector('.image-upload-area');
+  if (uploadArea) {
+    uploadArea.parentNode.insertBefore(preview, uploadArea.nextSibling);
+  }
+}
 
 // Cancel
 cancelBtn.addEventListener("click", () => {
