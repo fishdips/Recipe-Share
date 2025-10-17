@@ -21,14 +21,19 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
     
-    setupSearchAndFilter();
-    
+    // Load recipes first
     await loadRecipes();
+    
+    // Then setup search and filter (uses already loaded recipes)
+    setupSearchAndFilter();
 });
 
 function setupSearchAndFilter() {
     const searchInput = document.getElementById('searchInput');
     const filterSelect = document.getElementById('filterSelect');
+    
+    // Populate filter dropdown with cuisines from already loaded recipes
+    populateFilterOptions();
     
     searchInput.addEventListener('input', (e) => {
         const searchTerm = e.target.value.toLowerCase();
@@ -42,23 +47,39 @@ function setupSearchAndFilter() {
     });
 }
 
+function populateFilterOptions() {
+    const filterSelect = document.getElementById('filterSelect');
+    
+    // Use already loaded recipes instead of making another database call
+    const cuisines = [...new Set(
+        allRecipes
+            .map(r => r.cuisine)
+            .filter(c => c && c.trim() !== '')
+    )].sort();
+    
+    // Clear existing options except "All"
+    filterSelect.innerHTML = '<option value="all">All Cuisines</option>';
+    
+    // Add cuisine options
+    cuisines.forEach(cuisine => {
+        const option = document.createElement('option');
+        option.value = cuisine;
+        option.textContent = cuisine;
+        filterSelect.appendChild(option);
+    });
+}
+
 function filterRecipes(searchTerm, filter) {
     let filtered = allRecipes;
     
-    if (filter === 'my') {
-        if (window.CURRENT_USERNAME) {
-            filtered = filtered.filter(recipe => {
-                const recipeName = recipe.users?.full_name;
-                return recipeName === window.CURRENT_USERNAME;
-            });
-        }
-    } 
-    else if (filter !== 'all') {
+    // Filter by cuisine (excluding "all")
+    if (filter !== 'all') {
         filtered = filtered.filter(recipe => 
             recipe.cuisine && recipe.cuisine.toLowerCase() === filter.toLowerCase()
         );
     }
     
+    // Apply search filter
     if (searchTerm) {
         filtered = filtered.filter(recipe => {
             const title = recipe.title ? recipe.title.toLowerCase() : '';
@@ -131,9 +152,7 @@ function displayRecipes(recipes) {
     
     recipeCount.textContent = `${recipes.length} recipe${recipes.length !== 1 ? 's' : ''}`;
     
-    if (currentFilter === 'my') {
-        recipesTitle.textContent = 'My Recipes';
-    } else if (currentFilter === 'all') {
+    if (currentFilter === 'all') {
         recipesTitle.textContent = 'All Recipes';
     } else {
         recipesTitle.textContent = `${currentFilter} Recipes`;
@@ -144,7 +163,7 @@ function displayRecipes(recipes) {
             <div class="no-recipes">
                 <div class="no-recipes-icon">🍳</div>
                 <h3>No recipes found</h3>
-                <p>${currentFilter === 'my' ? 'You haven\'t added any recipes yet!' : 'Be the first to share a recipe!'}</p>
+                <p>Be the first to share a recipe!</p>
             </div>
         `;
         return;
