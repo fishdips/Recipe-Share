@@ -8,12 +8,10 @@ console.log("Supabase available:", typeof window.supabase);
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 console.log("Supabase client created:", supabase);
 
-// Get recipe ID from URL
 function getRecipeIdFromUrl() {
   const pathname = window.location.pathname;
   console.log("Current pathname:", pathname);
-  
-  // Pattern: /recipe/1/ or /recipe/1
+
   const match = pathname.match(/\/recipe\/(\d+)/);
   
   if (match && match[1]) {
@@ -92,7 +90,6 @@ function getCuisineTagClass(cuisine) {
   return 'tag-other';
 }
 
-// Calculate difficulty based on cook time
 function calculateDifficulty(cookTime) {
   const time = parseInt(cookTime);
   if (time <= 15) return { level: 'Easy', class: 'difficulty-easy' };
@@ -100,7 +97,6 @@ function calculateDifficulty(cookTime) {
   return { level: 'Hard', class: 'difficulty-hard' };
 }
 
-// Render recipe details
 function renderRecipe(recipe) {
   console.log("Rendering recipe:", recipe);
   
