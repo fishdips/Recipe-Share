@@ -14,15 +14,26 @@
     <div class="container">
       <nav class="nav">
         <div class="logo">
-          <div class="chef-icon"></div>
+          <div class="chef-icon">👨‍🍳</div>
           RecipeShare
         </div>
         <div class="nav-center">
-          <a href="{% url 'landing_page' %}" class="home-btn">Home</a>
+          {% if user_id %}
+            <a href="{% url 'main_page' %}" class="home-btn">
+              <span>🏠</span> Home
+            </a>
+          {% else %}
+            <a href="{% url 'landing_page' %}" class="home-btn">Home</a>
+          {% endif %}
         </div>
         <div class="nav-right">
-          <a href="{% url 'login_page' %}" class="login-btn">Login</a>
-          <a href="{% url 'signup_page' %}" class="signup-btn">Sign Up</a>
+          {% if user_id %}
+            <span class="username-display">{{ full_name }}</span>
+            <a href="{% url 'log_out' %}" class="logout-btn">Logout</a>
+          {% else %}
+            <a href="{% url 'login_page' %}" class="login-btn">Login</a>
+            <a href="{% url 'signup_page' %}" class="signup-btn">Sign Up</a>
+          {% endif %}
         </div>
       </nav>
     </div>
@@ -30,9 +41,15 @@
 
   <main class="main-content">
     <div class="container">
-      <a href="{% url 'landing_page' %}" class="back-btn">
-        <span class="arrow">←</span> Back to Home
-      </a>
+      {% if user_id %}
+        <a href="{% url 'main_page' %}" class="back-btn">
+          <span class="arrow">←</span> Back to Recipes
+        </a>
+      {% else %}
+        <a href="{% url 'landing_page' %}" class="back-btn">
+          <span class="arrow">←</span> Back to Home
+        </a>
+      {% endif %}
 
       <div class="recipe-detail-container" id="recipeDetailContainer">
         <div class="loading">Loading recipe...</div>
@@ -40,6 +57,11 @@
     </div>
   </main>
 
-  <script src="{% static 'js/recipedetail_script.js' %}"></script>
+  <script>
+    window.CURRENT_USER_ID = "{{ user_id|default:'' }}";
+    window.CURRENT_USERNAME = "{{ full_name|default:'' }}";
+    window.CURRENT_EMAIL = "{{ email|default:'' }}";
+  </script>
+  <script src="{% static 'js/recipedetail_script.js'%}"></script>
 </body>
 </html>

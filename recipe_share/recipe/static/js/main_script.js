@@ -4,6 +4,7 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 // ----------------------------------------------------------------------
 let supabaseClient;
 let allRecipes = [];
+let displayedRecipes = [];
 let currentFilter = 'all';
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -21,10 +22,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
     
-    // Load recipes first
     await loadRecipes();
-    
-    // Then setup search and filter (uses already loaded recipes)
     setupSearchAndFilter();
 });
 
@@ -32,7 +30,6 @@ function setupSearchAndFilter() {
     const searchInput = document.getElementById('searchInput');
     const filterSelect = document.getElementById('filterSelect');
     
-    // Populate filter dropdown with cuisines from already loaded recipes
     populateFilterOptions();
     
     searchInput.addEventListener('input', (e) => {
@@ -50,17 +47,14 @@ function setupSearchAndFilter() {
 function populateFilterOptions() {
     const filterSelect = document.getElementById('filterSelect');
     
-    // Use already loaded recipes instead of making another database call
     const cuisines = [...new Set(
         allRecipes
             .map(r => r.cuisine)
             .filter(c => c && c.trim() !== '')
     )].sort();
     
-    // Clear existing options except "All"
     filterSelect.innerHTML = '<option value="all">All Cuisines</option>';
     
-    // Add cuisine options
     cuisines.forEach(cuisine => {
         const option = document.createElement('option');
         option.value = cuisine;
@@ -72,14 +66,12 @@ function populateFilterOptions() {
 function filterRecipes(searchTerm, filter) {
     let filtered = allRecipes;
     
-    // Filter by cuisine (excluding "all")
     if (filter !== 'all') {
         filtered = filtered.filter(recipe => 
             recipe.cuisine && recipe.cuisine.toLowerCase() === filter.toLowerCase()
         );
     }
     
-    // Apply search filter
     if (searchTerm) {
         filtered = filtered.filter(recipe => {
             const title = recipe.title ? recipe.title.toLowerCase() : '';
@@ -92,7 +84,8 @@ function filterRecipes(searchTerm, filter) {
         });
     }
     
-    displayRecipes(filtered);
+    displayedRecipes = filtered;
+    renderRecipes(displayedRecipes);
 }
 
 async function loadRecipes() {
@@ -128,8 +121,9 @@ async function loadRecipes() {
         }
 
         allRecipes = recipes || [];
+        displayedRecipes = allRecipes;
         
-        displayRecipes(allRecipes);
+        renderRecipes(displayedRecipes);
 
     } catch (err) {
         console.error('Error loading recipes:', err);
@@ -143,12 +137,44 @@ async function loadRecipes() {
     }
 }
 
-function displayRecipes(recipes) {
-    const recipesGrid = document.getElementById('recipesGrid');
+function getDifficultyBadge(cookTime) {
+    if (!cookTime) return { label: 'Medium', class: 'difficulty-medium' };
+    
+    if (cookTime <= 30) return { label: 'Easy', class: 'difficulty-easy' };
+    if (cookTime <= 60) return { label: 'Medium', class: 'difficulty-medium' };
+    return { label: 'Hard', class: 'difficulty-hard' };
+}
+
+function truncateText(text, maxLength) {
+    if (!text) return 'No description available';
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + '...';
+}
+
+function parseIngredients(ingredients) {
+    if (!ingredients) return [];
+    
+    if (Array.isArray(ingredients)) {
+        return ingredients.slice(0, 3);
+    }
+    
+    try {
+        const parsed = JSON.parse(ingredients);
+        if (Array.isArray(parsed)) {
+            return parsed.slice(0, 3);
+        }
+    } catch (e) {
+        const items = ingredients.split(/[,\n;]/).map(item => item.trim()).filter(item => item);
+        return items.slice(0, 3);
+    }
+    
+    return [];
+}
+
+function renderRecipes(recipes) {
+    const grid = document.getElementById('recipesGrid');
     const recipeCount = document.getElementById('recipeCount');
     const recipesTitle = document.querySelector('.recipes-title');
-    
-    recipesGrid.innerHTML = '';
     
     recipeCount.textContent = `${recipes.length} recipe${recipes.length !== 1 ? 's' : ''}`;
     
@@ -158,93 +184,79 @@ function displayRecipes(recipes) {
         recipesTitle.textContent = `${currentFilter} Recipes`;
     }
     
-    if (!recipes || recipes.length === 0) {
-        recipesGrid.innerHTML = `
+    if (recipes.length === 0) {
+        grid.innerHTML = `
             <div class="no-recipes">
                 <div class="no-recipes-icon">🍳</div>
                 <h3>No recipes found</h3>
-                <p>Be the first to share a recipe!</p>
+                <p>Try adjusting your search or filter</p>
             </div>
         `;
         return;
     }
+    
+    const placeholderImage = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect width="400" height="300" fill="%23f0f0f0"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="18" fill="%23999"%3ENo Image%3C/text%3E%3C/svg%3E';
 
-    recipes.forEach(recipe => {
-        const recipeCard = createRecipeCard(recipe);
-        recipesGrid.appendChild(recipeCard);
-    });
-}
-
-function createRecipeCard(recipe) {
-    const card = document.createElement('div');
-    card.className = 'recipe-card';
-    
-    const cookTime = recipe.cook_time ? `${recipe.cook_time} min` : 'N/A';
-    
-    const recipeFullName = recipe.users?.full_name;
-    const isMyRecipe = window.CURRENT_USERNAME && recipeFullName === window.CURRENT_USERNAME;
-    
-    card.innerHTML = `
-        ${recipe.cover_photo_url ? 
-            `<img src="${recipe.cover_photo_url}" alt="${recipe.title}" class="recipe-image">` : 
-            `<div class="recipe-image"></div>`
-        }
-        <div class="recipe-content">
-            <h3 class="recipe-title">${recipe.title}</h3>
-            ${recipe.description ? 
-                `<p class="recipe-description">${recipe.description}</p>` : 
-                ''
-            }
-            <div class="recipe-meta">
-                <div class="meta-item">
-                    <span class="meta-icon">⏱️</span>
-                    <span>${cookTime}</span>
+    grid.innerHTML = recipes.map(recipe => {
+        const difficulty = getDifficultyBadge(recipe.cook_time);
+        const ingredients = parseIngredients(recipe.ingredients);
+        const recipeFullName = recipe.users?.full_name;
+        const isMyRecipe = window.CURRENT_USERNAME && recipeFullName === window.CURRENT_USERNAME;
+        
+        return `
+            <div class="recipe-card" onclick="viewRecipeDetail(${recipe.id})">
+                <img src="${recipe.cover_photo_url || placeholderImage}" 
+                     alt="${recipe.title}" 
+                     class="recipe-image"
+                     onerror="this.src='${placeholderImage}'">
+                
+                <div class="recipe-content">
+                    <div class="recipe-header">
+                        <div class="recipe-meta">
+                            <span class="recipe-tag tag-${(recipe.cuisine || 'other').toLowerCase().replace(/\s+/g, '-')}">
+                                ${recipe.cuisine || 'Other'}
+                            </span>
+                            <span class="difficulty ${difficulty.class}">
+                                ${difficulty.label}
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <h3 class="recipe-title">${recipe.title}</h3>
+                    
+                    <p class="recipe-description">
+                        ${truncateText(recipe.description, 100)}
+                    </p>
+                    
+                    <div class="recipe-stats">
+                        <div class="stat">
+                            <span>⏱️</span>
+                            <span>${recipe.cook_time || '30'} min</span>
+                        </div>
+                        <div class="stat">
+                            <span>🍽️</span>
+                            <span>${Math.floor(Math.random() * 4) + 2} servings</span>
+                        </div>
+                    </div>
+                    
+                    ${ingredients.length > 0 ? `
+                        <div class="ingredient-preview">
+                            <strong>Ingredients:</strong><br>
+                            ${ingredients.map(ing => `• ${ing}`).join('<br>')}
+                        </div>
+                    ` : ''}
+                    
+                    <div class="author-info">
+                        ${isMyRecipe ? 'Your Recipe' : recipeFullName ? `By ${recipeFullName}` : 'By RecipeShare Community'}
+                        ${recipe.created_at ? ' • ' + new Date(recipe.created_at).toLocaleDateString() : ''}
+                    </div>
                 </div>
-                ${recipe.cuisine ? 
-                    `<div class="meta-item">
-                        <span class="meta-icon">🌍</span>
-                        <span>${recipe.cuisine}</span>
-                    </div>` : 
-                    ''
-                }
-                ${isMyRecipe ? 
-                    `<div class="meta-item">
-                        <span class="meta-icon">👤</span>
-                        <span>Your Recipe</span>
-                    </div>` : 
-                    recipeFullName ? 
-                    `<div class="meta-item">
-                        <span class="meta-icon">👤</span>
-                        <span>By ${recipeFullName}</span>
-                    </div>` : 
-                    ''
-                }
             </div>
-            <div class="recipe-tags">
-                ${recipe.category ? `<span class="tag">${recipe.category}</span>` : ''}
-            </div>
-        </div>
-    `;
-    
-    card.addEventListener('click', () => {
-        console.log('Clicked recipe:', recipe);
-        // For recipe clicks ----------------------------
-        alert(`Recipe: ${recipe.title}\n\nNO Click functionality`);
-    });
-    
-    return card;
+        `;
+    }).join('');
 }
 
-//For date functionality
-function formatDate(dateString) {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffTime = Math.abs(now - date);
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-    
-    if (diffDays === 0) return 'Today';
-    if (diffDays === 1) return 'Yesterday';
-    if (diffDays < 7) return `${diffDays} days ago`;
-    if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
-    return date.toLocaleDateString();
+function viewRecipeDetail(recipeId) {
+    console.log('Navigating to recipe:', recipeId);
+    window.location.href = `/recipe/${recipeId}/`;
 }
