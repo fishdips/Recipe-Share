@@ -20,7 +20,10 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 def recipe_detail(request, recipe_id):
     """View for displaying recipe details to guest users"""
     context = {
-        'recipe_id': recipe_id
+        'recipe_id': recipe_id,
+        'user_id': request.session.get('user_id'),
+        'full_name': request.session.get('full_name', ''),
+        'email': request.session.get('email', '')
     }
     return render(request, 'recipedetail_page.html', context)
 
@@ -118,7 +121,6 @@ def login_page(request):
 
     return render(request, "login_page.html")
 
-
 def log_out(request):
     if request.method == "POST":
         # Destroy Django session
@@ -134,8 +136,6 @@ def log_out(request):
 
     # GET → show confirmation modal
     return render(request, "log_out.html")
-
-
 
 def signup_page(request):
     if request.method == "POST":
