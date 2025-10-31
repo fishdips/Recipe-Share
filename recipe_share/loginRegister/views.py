@@ -1,3 +1,4 @@
+from django.shortcuts import render
 from django.contrib.auth import logout
 from django.shortcuts import render, redirect
 from django.contrib import messages
@@ -16,19 +17,7 @@ from django.shortcuts import redirect, render
 SUPABASE_URL = "https://jfzojphxhgpejvffefvo.supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impmem9qcGh4aGdwZWp2ZmZlZnZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkwNDU0MDUsImV4cCI6MjA3NDYyMTQwNX0.CDDc3Zja_faSnao3sEMXP_HyFolMMVIhadEsDC5ZS3c"
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-# ------------------------------------------------------------------
-def recipe_detail(request, recipe_id):
-    """View for displaying recipe details to guest users"""
-    context = {
-        'recipe_id': recipe_id,
-        'user_id': request.session.get('user_id'),
-        'full_name': request.session.get('full_name', ''),
-        'email': request.session.get('email', '')
-    }
-    return render(request, 'recipedetail_page.html', context)
 
-def landing_page(request):
-    return render(request, 'landing_page.html')
 
 @csrf_exempt
 def login_page(request):
@@ -121,21 +110,6 @@ def login_page(request):
 
     return render(request, "login_page.html")
 
-def log_out(request):
-    if request.method == "POST":
-        # Destroy Django session
-        logout(request)
-        request.session.flush()   # extra cleanup
-
-        # Return JSON if it’s an API request
-        if request.headers.get("x-requested-with") == "XMLHttpRequest":
-            return JsonResponse({"success": True, "redirect_url": "/login/"})
-
-        # Normal flow → redirect to login page
-        return redirect("login_page")
-
-    # GET → show confirmation modal
-    return render(request, "log_out.html")
 
 def signup_page(request):
     if request.method == "POST":
@@ -165,19 +139,3 @@ def signup_page(request):
         return redirect("login_page")  
 
     return render(request, "signup_page.html")
-
-def main_page(request):
-    context = {
-        'username': request.user.username,
-        'full_name': request.session.get('full_name', request.user.first_name),
-        'email': request.session.get('email', request.user.email)
-    }
-    return render(request, 'main_page.html', context)
-
-def create_page(request):
-    context = {
-        'username': request.user.username,
-        'full_name': request.session.get('full_name', request.user.first_name),
-        'email': request.session.get('email', request.user.email)
-    }
-    return render(request, 'create_page.html', context)
