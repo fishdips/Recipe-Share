@@ -21,6 +21,10 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include('recipe.urls')),  # include app routes
+    path('', include('LandingPage.urls'), name='landing_page'),
+    path('create/', include('CreateRecipe.urls')),
+    path('main/', include('MainPage.urls')), 
+    path('auth/', include('loginRegister.urls')),
+    path('logout/', include('logout.urls')),
+    path('recipe/', include('RecipeDetails.urls')),
 ]
-
