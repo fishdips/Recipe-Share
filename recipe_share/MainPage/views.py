@@ -23,7 +23,7 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 def main_page(request):
     context = {
         'username': request.user.username,
-        'full_name': request.session.get('full_name', request.user.first_name),
-        'email': request.session.get('email', request.user.email)
+        'full_name': request.session.get('full_name', ""),
+        'email': request.session.get('email', "")
     }
     return render(request, 'main_page.html', context)

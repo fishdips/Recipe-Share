@@ -41,74 +41,64 @@ def login_page(request):
 
         try:
             print(f"Querying Supabase for email: {email}")
-            # Get user from Supabase 'users' table
             response = supabase.table('users').select('*').eq('email', email).execute()
-            
+
             print(f"Supabase response: {response.data}")
-            
-            # Check if user exists
+
+            # If user exists
             if response.data and len(response.data) > 0:
                 user_data = response.data[0]
                 stored_password = user_data.get('password')
-                
-                # DEBUG: Print password info
+
                 print(f"User found: {user_data.get('full_name')}")
-                print(f"Email: {email}")
-                print(f"Input password length: {len(password)}")
                 print(f"Stored password: {stored_password[:60]}...")
-                print(f"Password starts with 'pbkdf2': {stored_password.startswith('pbkdf2')}")
-                
+
                 password_valid = check_password(password, stored_password)
-                print(f"Password check result: {password_valid}")
-                
-                # Verify password using check_password for hashed passwords
+
+                print(f"Password match: {password_valid}")
+
                 if password_valid:
-                    # Get/Create Django user for session management
-                    user, created = User.objects.get_or_create(
-                        username=email,
-                        defaults={
-                            'email': email,
-                            'first_name': user_data.get('full_name', '')
-                        }
-                    )
-                    
-                    # Store user data in session for easy access
+
+                    # 🔥 Store your custom Supabase user in Django session
                     request.session['user_id'] = user_data.get('id')
                     request.session['full_name'] = user_data.get('full_name')
                     request.session['email'] = user_data.get('email')
-                    
-                    # Log the user into Django
-                    login(request, user, backend='django.contrib.auth.backends.ModelBackend')
-                    
+                    request.session['is_authenticated'] = True  # Add your own auth flag
+
+                    print("Custom user logged in (Supabase)")
+
                     if request.headers.get("x-requested-with") == "XMLHttpRequest":
                         return JsonResponse({"success": True, "redirect_url": "/main/"})
                     return redirect("main_page")
+
                 else:
-                    # Wrong password
                     error_message = "Invalid email or password"
             else:
-                # User not found
                 error_message = "Invalid email or password"
-            
-            # Handle errors
+
+            # Handle errors for AJAX
             if request.headers.get("x-requested-with") == "XMLHttpRequest":
                 return JsonResponse({"success": False, "error": error_message}, status=400)
+
             return render(request, "login_page.html", {
                 "error": error_message,
-                "email": email
+                "email": email,
             })
-                
+
         except Exception as e:
             print(f"Login error: {str(e)}")
             error_message = "Invalid email or password"
+
             if request.headers.get("x-requested-with") == "XMLHttpRequest":
                 return JsonResponse({"success": False, "error": error_message}, status=400)
+
             return render(request, "login_page.html", {
                 "error": error_message,
-                "email": email
+                "email": email,
             })
 
     return render(request, "login_page.html")
+
 
 
 def signup_page(request):
