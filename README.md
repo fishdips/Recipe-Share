@@ -9,7 +9,6 @@ Recipe Share is a web application designed for university students to share, dis
 - **Rating System**: Users can rate recipes submitted by other students.
 - **Commenting**: Users can leave comments and interact with the community.
 - **Favorites**: Users can mark recipes as favorites and access them easily.
-- **Profile Page**: Users can view all recipes they have posted.
 
 ## Technologies Used
 
