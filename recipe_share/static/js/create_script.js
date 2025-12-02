@@ -276,6 +276,11 @@ submitBtn.addEventListener("click", async () => {
       alert("Please add at least one instruction step");
       return;
     }
+    if (!imageUrl) {
+      alert("Please upload an image before creating a recipe");
+      return;
+    }
+
 
     submitBtn.disabled = true;
     submitBtn.textContent = "Adding Recipe...";
