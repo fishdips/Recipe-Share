@@ -740,7 +740,7 @@ function renderRecipe(recipe) {
   }, 0);
 }
 
-// ===== LOAD RECIPE =====
+// Recipe loader
 async function loadRecipe() {
   const recipeId = getRecipeIdFromUrl();
   
@@ -751,7 +751,7 @@ async function loadRecipe() {
   }
   
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabase // process of this is to fetch the recuipe data from supabase nato
       .from('recipes')
       .select('*')
       .eq('id', recipeId)
@@ -774,5 +774,4 @@ async function loadRecipe() {
   }
 }
 
-// ===== INITIALIZE =====
 document.addEventListener('DOMContentLoaded', loadRecipe);

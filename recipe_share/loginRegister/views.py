@@ -45,7 +45,6 @@ def login_page(request):
 
             print(f"Supabase response: {response.data}")
 
-            # If user exists
             if response.data and len(response.data) > 0:
                 user_data = response.data[0]
                 stored_password = user_data.get('password')
@@ -59,11 +58,10 @@ def login_page(request):
 
                 if password_valid:
 
-                    # 🔥 Store your custom Supabase user in Django session
                     request.session['user_id'] = user_data.get('id')
                     request.session['full_name'] = user_data.get('full_name')
                     request.session['email'] = user_data.get('email')
-                    request.session['is_authenticated'] = True  # Add your own auth flag
+                    request.session['is_authenticated'] = True  
 
                     print("Custom user logged in (Supabase)")
 
@@ -76,7 +74,6 @@ def login_page(request):
             else:
                 error_message = "Invalid email or password"
 
-            # Handle errors for AJAX
             if request.headers.get("x-requested-with") == "XMLHttpRequest":
                 return JsonResponse({"success": False, "error": error_message}, status=400)
 
@@ -108,12 +105,10 @@ def signup_page(request):
         password = request.POST.get("password")
         confirm_password = request.POST.get("confirmPassword")
 
-        # Check password confirmation
         if password != confirm_password:
             messages.error(request, "Passwords do not match.")
             return redirect("signup_page")
 
-        # Check if email exists
         if Users.objects.filter(email=email).exists():
             messages.error(request, "Email already registered.")
             return redirect("signup_page")
@@ -129,3 +124,58 @@ def signup_page(request):
         return redirect("login_page")  
 
     return render(request, "signup_page.html")
+
+def forgot_password(request):
+    if request.method == "POST":
+
+        if "new_password" in request.POST:
+            email = request.session.get("reset_email")
+
+            if not email:
+                return redirect("forgot_password")
+
+            new_pass = request.POST.get("new_password")
+            confirm_pass = request.POST.get("confirm_password")
+
+            if new_pass != confirm_pass:
+                return render(request, "forgot_password.html", {
+                    "step2": True,
+                    "error": "Passwords do not match."
+                })
+
+            hashed_new_password = make_password(new_pass)
+
+            supabase.table("users").update({
+                "password": hashed_new_password
+            }).eq("email", email).execute()
+
+            del request.session["reset_email"]
+
+            messages.success(request, "Password updated successfully. Please log in.")
+            return redirect("login_page")
+
+        email = request.POST.get("email")
+        old_pass = request.POST.get("old_password")
+
+        user_response = supabase.table("users").select("*").eq("email", email).execute()
+
+        if not user_response.data:
+            return render(request, "forgotpassword_page.html", {
+                "error": "Email not found."
+            })
+
+        user = user_response.data[0]
+        stored_password = user.get("password")
+
+        if not check_password(old_pass, stored_password):
+            return render(request, "forgot_password.html", {
+                "error": "Old password is incorrect."
+            })
+
+        request.session["reset_email"] = email
+
+        return render(request, "forgotpassword_page.html", {
+            "step2": True
+        })
+
+    return render(request, "forgotpassword_page.html")

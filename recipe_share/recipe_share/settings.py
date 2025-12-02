@@ -28,15 +28,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-3&_a$cbcexg#i-h4a83vakkx0lr&x+e3oofk*lkt%4r^9e(@)w'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv("DEBUG", "True") == "True"
 
-ALLOWED_HOSTS = [
-    "recipe-share-4f7x.onrender.com",
-    '127.0.0.1',
-    'localhost'
-
-]
-
+if DEBUG:
+    ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
+else:
+    ALLOWED_HOSTS = ["recipe-share-4f7x.onrender.com"]
 
 # Application definition
 
