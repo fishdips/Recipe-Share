@@ -63,6 +63,19 @@ addStepBtn.addEventListener("click", () => {
   instructionsContainer.appendChild(textarea);
 });
 
+// Validate number inputs
+document.getElementById("cookTime").addEventListener("input", (e) => {
+  if (e.target.value < 1) e.target.value = "";
+});
+
+document.getElementById("servings").addEventListener("input", (e) => {
+  if (e.target.value < 1) e.target.value = "";
+});
+
+document.getElementById("prepTime").addEventListener("input", (e) => {
+  if (e.target.value < 1) e.target.value = "";
+});
+
 // Helper function: Upload via REST API (most reliable method)
 async function uploadViaFetch(bucket, filePath, file) {
   try {
@@ -180,31 +193,7 @@ fileInput.addEventListener("change", async (e) => {
   }
 });
 
-//Show image preview
-function showImagePreview(url) {
-  // Remove existing preview if any
-  const existingPreview = document.querySelector('.image-preview');
-  if (existingPreview) {
-    existingPreview.remove();
-  }
-
-  // Create preview element
-  const preview = document.createElement('div');
-  preview.className = 'image-preview';
-  preview.style.cssText = 'margin-top: 10px; text-align: center;';
-  preview.innerHTML = `
-    <img src="${url}" alt="Preview" style="max-width: 200px; max-height: 200px; border-radius: 8px; border: 2px solid #ddd;">
-    <p style="margin-top: 5px; font-size: 12px; color: #666;">Preview</p>
-  `;
-
-  // Insert preview after the upload area
-  const uploadArea = document.querySelector('.image-upload-area');
-  if (uploadArea) {
-    uploadArea.parentNode.insertBefore(preview, uploadArea.nextSibling);
-  }
-}
-
-// Optional: Show image preview
+// Show image preview
 function showImagePreview(url) {
   // Remove existing preview if any
   const existingPreview = document.querySelector('.image-preview');
@@ -242,9 +231,12 @@ submitBtn.addEventListener("click", async () => {
   try {
     const title = document.getElementById("title").value.trim();
     const description = document.getElementById("description").value.trim();
-    const category = document.getElementById("category").value.trim();
+    const category = document.getElementById("category").value;
     const cuisine = document.getElementById("cuisine").value.trim();
     const cookTime = document.getElementById("cookTime").value.trim();
+    const servings = document.getElementById("servings").value.trim();
+    const prepTime = document.getElementById("prepTime").value.trim();
+    const difficulty = document.getElementById("difficulty").value;
     const imageUrl = document.getElementById("imageUrl").value.trim();
 
     const ingredientInputs = document.querySelectorAll(".ingredient-input");
@@ -258,29 +250,59 @@ submitBtn.addEventListener("click", async () => {
       .filter((val) => !val.match(/^\d+\.\s*$/))
       .join("\n\n");
 
+    // Validation
     if (!title) {
-      alert("Please enter a recipe title");
+      alert("❌ Please enter a recipe title");
       document.getElementById("title").focus();
       return;
     }
     if (!description) {
-      alert("Please enter a description");
+      alert("❌ Please enter a description");
       document.getElementById("description").focus();
       return;
     }
+    if (!imageUrl) {
+      alert("❌ Please upload or provide an image URL for the recipe");
+      return;
+    }
+    if (!category) {
+      alert("❌ Please select a category");
+      document.getElementById("category").focus();
+      return;
+    }
+    if (!cookTime || parseInt(cookTime) < 1) {
+      alert("❌ Please enter a valid cook time (minimum 1 minute)");
+      document.getElementById("cookTime").focus();
+      return;
+    }
+    if (!servings || parseInt(servings) < 1) {
+      alert("❌ Please enter a valid number of servings (minimum 1)");
+      document.getElementById("servings").focus();
+      return;
+    }
+    if (!prepTime || parseInt(prepTime) < 1) {
+      alert("❌ Please enter a valid prep time (minimum 1 minute)");
+      document.getElementById("prepTime").focus();
+      return;
+    }
+    if (!difficulty) {
+      alert("❌ Please select a difficulty level");
+      document.getElementById("difficulty").focus();
+      return;
+    }
     if (ingredients.length === 0) {
-      alert("Please add at least one ingredient");
+      alert("❌ Please add at least one ingredient");
       return;
     }
     if (!instructions) {
-      alert("Please add at least one instruction step");
+      alert("❌ Please add at least one instruction step");
       return;
     }
 
     submitBtn.disabled = true;
     submitBtn.textContent = "Adding Recipe...";
 
-    // FIXED: Get email instead of username
+    // Get email
     const userEmail = window.CURRENT_EMAIL || window.CURRENT_USERNAME;
 
     if (!userEmail) {
@@ -292,7 +314,7 @@ submitBtn.addEventListener("click", async () => {
 
     console.log("Looking up user by email:", userEmail);
 
-    // FIXED: Query by email instead of username
+    // Query by email
     const { data: userRow, error: userError } = await supabase
       .from("users")
       .select("id")
@@ -301,7 +323,7 @@ submitBtn.addEventListener("click", async () => {
 
     if (userError || !userRow) {
       console.error("Error fetching user ID:", userError);
-      alert("Error: could not find user ID for this email.");
+      alert("❌ Error: could not find user ID for this email.");
       submitBtn.disabled = false;
       submitBtn.textContent = "Add Recipe";
       return;
@@ -317,10 +339,10 @@ submitBtn.addEventListener("click", async () => {
       description,
       ingredients,
       instructions,
-      cook_time: cookTime ? parseInt(cookTime) : null,
+      cook_time: parseInt(cookTime),
       cuisine: cuisine || null,
-      category: category || null,
-      cover_photo_url: imageUrl || null,
+      category: category,
+      cover_photo_url: imageUrl,
     });
 
     // Insert recipe
@@ -333,24 +355,24 @@ submitBtn.addEventListener("click", async () => {
           description,
           ingredients,
           instructions,
-          cook_time: cookTime ? parseInt(cookTime) : null,
+          cook_time: parseInt(cookTime),
           cuisine: cuisine || null,
-          category: category || null,
-          cover_photo_url: imageUrl || null,
+          category: category,
+          cover_photo_url: imageUrl,
         },
       ])
       .select();
 
     if (error) {
       console.error("❌ Error inserting recipe:", error);
-      alert("Error creating recipe: " + error.message);
+      alert("❌ Error creating recipe: " + error.message);
       submitBtn.disabled = false;
       submitBtn.textContent = "Add Recipe";
       return;
     }
 
     console.log("🎉 Recipe created successfully:", data);
-    alert("Recipe created successfully!");
+    alert("✅ Recipe created successfully!");
 
     resetForm();
     await loadRecipes();
@@ -359,7 +381,7 @@ submitBtn.addEventListener("click", async () => {
     submitBtn.textContent = "Add Recipe";
   } catch (error) {
     console.error("🔥 Unexpected error details:", error);
-    alert("An unexpected error occurred: " + error.message);
+    alert("❌ An unexpected error occurred: " + error.message);
     submitBtn.disabled = false;
     submitBtn.textContent = "Add Recipe";
   }
@@ -371,6 +393,9 @@ function resetForm() {
   document.getElementById("category").value = "";
   document.getElementById("cuisine").value = "";
   document.getElementById("cookTime").value = "";
+  document.getElementById("servings").value = "";
+  document.getElementById("prepTime").value = "";
+  document.getElementById("difficulty").value = "";
   document.getElementById("imageUrl").value = "";
 
   ingredientsContainer.innerHTML = `
@@ -382,6 +407,13 @@ function resetForm() {
     `;
 
   fileInput.value = "";
+  
+  // Remove preview
+  const existingPreview = document.querySelector('.image-preview');
+  if (existingPreview) {
+    existingPreview.remove();
+  }
+  
   console.log("Form reset complete");
 }
 
@@ -458,7 +490,7 @@ function displayRecipes(recipes) {
   });
 }
 
-// FIXED: Get current user ID by email
+// Get current user ID by email
 async function getCurrentUserId() {
   try {
     const userEmail = window.CURRENT_EMAIL || window.CURRENT_USERNAME;
