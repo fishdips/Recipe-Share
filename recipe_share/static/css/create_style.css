@@ -174,7 +174,7 @@ body {
     background-color: #ffd4b3;
     border-radius: 12px;
     padding: 20px;
-    margin-bottom: 12px;
+    margin-bottom: 20px;
 }
 
 .details-section label {
@@ -219,6 +219,7 @@ body {
     color: #666;
     font-weight: 600;
 }
+
 
 .add-btn {
     background-color: #ff8c42;

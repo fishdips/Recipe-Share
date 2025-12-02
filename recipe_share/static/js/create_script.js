@@ -245,6 +245,8 @@ submitBtn.addEventListener("click", async () => {
     const category = document.getElementById("category").value.trim();
     const cuisine = document.getElementById("cuisine").value.trim();
     const cookTime = document.getElementById("cookTime").value.trim();
+    const prepTime = document.getElementById("prepTime").value.trim();
+    const difficulty = document.getElementById("difficulty").value;
     const imageUrl = document.getElementById("imageUrl").value.trim();
 
     const ingredientInputs = document.querySelectorAll(".ingredient-input");
@@ -339,6 +341,8 @@ submitBtn.addEventListener("click", async () => {
           ingredients,
           instructions,
           cook_time: cookTime ? parseInt(cookTime) : null,
+          prep_time: prepTime ? parseInt(prepTime) : null,
+          difficulty: difficulty || null,
           cuisine: cuisine || null,
           category: category || null,
           cover_photo_url: imageUrl || null,
