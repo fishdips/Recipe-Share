@@ -38,9 +38,34 @@
         <div class="search-container">
           <input type="text" class="search-input" id="searchInput" placeholder="Search recipes, ingredients...">
           <select class="filter-select" id="filterSelect">
-            <option value="all">All Recipes</option>
-            <option value="my">My Recipes</option>
+            <option value="all">All Cuisines</option>
           </select>
+        </div>
+
+        <div class="filter-bar-container">
+          <button type="button" class="filter-toggle" id="filterToggle">
+            <span>Sort &amp; Filter Options</span>
+            <span class="filter-arrow">▼</span>
+          </button>
+          <div class="filter-options" id="filterOptions">
+            <div class="filter-chips">
+              <button type="button" class="filter-chip active" data-sort="latest">
+                <span>🆕</span> Latest
+              </button>
+              <button type="button" class="filter-chip" data-sort="oldest">
+                <span>📅</span> Oldest
+              </button>
+              <button type="button" class="filter-chip" data-sort="most-rated">
+                <span>🥇</span> Most Rated
+              </button>
+              <button type="button" class="filter-chip" data-sort="favorites">
+                <span>⭐</span> Favorites
+              </button>
+              <button type="button" class="filter-chip" data-sort="my-recipes">
+                <span>👤</span> My Recipes
+              </button>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -56,8 +81,7 @@
       </section>
     </div>
   </main>
-
-  <!-- Pass full_name for filtering "My Recipes" -->
+  
   <script>
     window.CURRENT_USERNAME = "{{ full_name|default:username }}";
     window.CURRENT_EMAIL = "{{ email|default:username }}";

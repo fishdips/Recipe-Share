@@ -1,14 +1,9 @@
-// Initialize Supabase client
+// ===== SUPABASE INITIALIZATION =====
 const SUPABASE_URL = "https://jfzojphxhgpejvffefvo.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impmem9qcGh4aGdwZWp2ZmZlZnZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkwNDU0MDUsImV4cCI6MjA3NDYyMTQwNX0.CDDc3Zja_faSnao3sEMXP_HyFolMMVIhadEsDC5ZS3c";
-
-console.log("Script loaded successfully");
-console.log("Supabase available:", typeof window.supabase);
-
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-console.log("Supabase client created:", supabase);
 
-// Global state for recipe stats
+// ===== GLOBAL STATE =====
 let currentRecipeStats = {
   averageRating: 0,
   totalRatings: 0,
@@ -17,113 +12,76 @@ let currentRecipeStats = {
   isFavorited: false
 };
 
-// is user guest or logged
+// ===== HELPER FUNCTIONS =====
 function isUserLoggedIn() {
   return window.CURRENT_USER_ID && window.CURRENT_USER_ID.trim() !== '';
 }
 
-// Load stats from db
-async function loadRecipeStats(recipeId) {
+function getRecipeIdFromUrl() {
+  const pathname = window.location.pathname;
+  const match = pathname.match(/\/recipe\/(\d+)/);
+  return match ? match[1] : null;
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+function getCuisineTagClass(cuisine) {
+  if (!cuisine) return 'tag-other';
+  const cuisineLower = cuisine.toLowerCase();
+  if (cuisineLower.includes('italian') || cuisineLower.includes('french')) return 'tag-italian';
+  if (cuisineLower.includes('asian') || cuisineLower.includes('filipino')) return 'tag-asian';
+  if (cuisineLower.includes('dessert')) return 'tag-dessert';
+  if (cuisineLower.includes('mexican')) return 'tag-mexican';
+  if (cuisineLower.includes('american')) return 'tag-american';
+  return 'tag-other';
+}
+
+function calculateDifficulty(cookTime) {
+  const time = parseInt(cookTime);
+  if (time <= 15) return { level: 'Easy', class: 'difficulty-easy' };
+  if (time <= 30) return { level: 'Medium', class: 'difficulty-medium' };
+  return { level: 'Hard', class: 'difficulty-hard' };
+}
+
+// ===== FORMATTING FUNCTIONS =====
+function formatIngredients(ingredientsData) {
   try {
-    // Calculate rating
-    const { data: ratings, error: ratingsError } = await supabase
-      .from('recipe_ratings')
-      .select('rating')
-      .eq('recipe_id', recipeId);
+    const ingredients = typeof ingredientsData === 'string' 
+      ? JSON.parse(ingredientsData) 
+      : ingredientsData;
     
-    if (ratingsError) throw ratingsError;
-    
-    if (ratings && ratings.length > 0) {
-      const sum = ratings.reduce((acc, r) => acc + r.rating, 0);
-      currentRecipeStats.averageRating = sum / ratings.length;
-      currentRecipeStats.totalRatings = ratings.length;
+    if (Array.isArray(ingredients)) {
+      return ingredients.map(ing => {
+        if (typeof ing === 'string') return ing;
+        if (ing.item && ing.amount) return `${ing.amount} ${ing.item}`;
+        return String(ing);
+      });
     }
-    
-    // Get favorite count
-    const { count: favCount, error: favCountError } = await supabase
-      .from('recipe_favorites')
-      .select('*', { count: 'exact', head: true })
-      .eq('recipe_id', recipeId);
-    
-    if (favCountError) throw favCountError;
-    currentRecipeStats.favoriteCount = favCount || 0;
-    
-    // Check if current user has rated this recipe
-    if (isUserLoggedIn()) {
-      const { data: userRatingData, error: userRatingError } = await supabase
-        .from('recipe_ratings')
-        .select('rating')
-        .eq('recipe_id', recipeId)
-        .eq('user_id', window.CURRENT_USER_ID)
-        .single();
-      
-      if (!userRatingError && userRatingData) {
-        currentRecipeStats.userRating = userRatingData.rating;
-      }
-      
-      // Check if user has favorited
-      const { data: favData, error: favError } = await supabase
-        .from('recipe_favorites')
-        .select('*')
-        .eq('recipe_id', recipeId)
-        .eq('user_id', window.CURRENT_USER_ID)
-        .single();
-      
-      if (!favError && favData) {
-        currentRecipeStats.isFavorited = true;
-      }
-    }
-    
-    updateStatsDisplay();
-    
-  } catch (error) {
-    console.error('Error loading recipe stats:', error);
+    return [];
+  } catch (e) {
+    console.error('Error parsing ingredients:', e);
+    return [];
   }
 }
 
-// STATS
-function updateStatsDisplay() {
-  const dbRatingDisplay = document.querySelector('.db-rating-display');
-  if (dbRatingDisplay) {
-    dbRatingDisplay.innerHTML = generateDBRatingStars(currentRecipeStats.averageRating, currentRecipeStats.totalRatings);
-  }
+function formatInstructions(instructionsData) {
+  if (!instructionsData) return [];
   
-  const userStars = document.querySelectorAll('.user-rating-star');
-  userStars.forEach((star, index) => {
-    if (index < currentRecipeStats.userRating) {
-      star.classList.add('selected');
-    } else {
-      star.classList.remove('selected');
-    }
-  });
-  
-  const userRatingContainer = document.querySelector('.user-rating-container');
-  if (userRatingContainer) {
-    if (currentRecipeStats.userRating > 0) {
-      userRatingContainer.classList.add('has-rated');
-    } else {
-      userRatingContainer.classList.remove('has-rated');
-    }
-  }
-  
-  // Update favorite count and button state
-  const favCount = document.querySelector('.favorite-count');
-  if (favCount) {
-    favCount.textContent = currentRecipeStats.favoriteCount;
-  }
-  
-  const favBtn = document.querySelector('.favorite-btn');
-  if (favBtn) {
-    if (currentRecipeStats.isFavorited) {
-      favBtn.classList.add('favorited');
-      favBtn.querySelector('.btn-text').textContent = 'Favorited';
-    } else {
-      favBtn.classList.remove('favorited');
-      favBtn.querySelector('.btn-text').textContent = 'Favorite';
-    }
-  }
+  return instructionsData
+    .split(/(?=\d+\.\s+)/)
+    .filter(step => step.trim())
+    .map(step => {
+      let cleanStep = step.replace(/^\d+\.\s+/, '').trim();
+      cleanStep = cleanStep.replace(/^Step\s+\d+:\s*/i, '').trim();
+      return cleanStep.replace(/\n/g, '<br>');
+    });
 }
 
+// ===== RATING DISPLAY =====
 function generateDBRatingStars(avgRating, totalRatings) {
   const fullStars = Math.floor(avgRating);
   const hasHalfStar = avgRating % 1 >= 0.5;
@@ -149,25 +107,115 @@ function generateDBRatingStars(avgRating, totalRatings) {
   return starsHtml;
 }
 
+function updateStatsDisplay() {
+  // Update DB rating display
+  const dbRatingDisplay = document.querySelector('.db-rating-display');
+  if (dbRatingDisplay) {
+    dbRatingDisplay.innerHTML = generateDBRatingStars(currentRecipeStats.averageRating, currentRecipeStats.totalRatings);
+  }
+  
+  // Update user rating stars
+  const userStars = document.querySelectorAll('.user-rating-star');
+  userStars.forEach((star, index) => {
+    star.classList.toggle('selected', index < currentRecipeStats.userRating);
+  });
+  
+  // Update user rating container
+  const userRatingContainer = document.querySelector('.user-rating-container');
+  if (userRatingContainer) {
+    userRatingContainer.classList.toggle('has-rated', currentRecipeStats.userRating > 0);
+  }
+  
+  // Update favorite count and button
+  const favCount = document.querySelector('.favorite-count');
+  if (favCount) {
+    favCount.textContent = currentRecipeStats.favoriteCount;
+  }
+  
+  const favBtn = document.querySelector('.favorite-btn');
+  if (favBtn) {
+    if (currentRecipeStats.isFavorited) {
+      favBtn.classList.add('favorited');
+      favBtn.querySelector('.btn-text').textContent = 'Favorited';
+    } else {
+      favBtn.classList.remove('favorited');
+      favBtn.querySelector('.btn-text').textContent = 'Favorite';
+    }
+  }
+}
+
+// ===== STAR HOVER EFFECTS =====
 function handleStarHover(starIndex) {
   const stars = document.querySelectorAll('.user-rating-star');
   stars.forEach((star, index) => {
-    if (index <= starIndex - 1) {
-      star.classList.add('hovered');
-    } else {
-      star.classList.remove('hovered');
-    }
+    star.classList.toggle('hovered', index <= starIndex - 1);
   });
 }
 
 function handleStarLeave() {
-  const stars = document.querySelectorAll('.user-rating-star');
-  stars.forEach(star => {
+  document.querySelectorAll('.user-rating-star').forEach(star => {
     star.classList.remove('hovered');
   });
 }
 
-// Rating
+// ===== DATABASE OPERATIONS =====
+async function loadRecipeStats(recipeId) {
+  try {
+    // Get ratings
+    const { data: ratings, error: ratingsError } = await supabase
+      .from('recipe_ratings')
+      .select('rating')
+      .eq('recipe_id', recipeId);
+    
+    if (ratingsError) throw ratingsError;
+    
+    if (ratings && ratings.length > 0) {
+      const sum = ratings.reduce((acc, r) => acc + r.rating, 0);
+      currentRecipeStats.averageRating = sum / ratings.length;
+      currentRecipeStats.totalRatings = ratings.length;
+    }
+    
+    // Get favorite count
+    const { count: favCount, error: favCountError } = await supabase
+      .from('recipe_favorites')
+      .select('*', { count: 'exact', head: true })
+      .eq('recipe_id', recipeId);
+    
+    if (favCountError) throw favCountError;
+    currentRecipeStats.favoriteCount = favCount || 0;
+    
+    // Check user's rating and favorite status if logged in
+    if (isUserLoggedIn()) {
+      const { data: userRatingData } = await supabase
+        .from('recipe_ratings')
+        .select('rating')
+        .eq('recipe_id', recipeId)
+        .eq('user_id', window.CURRENT_USER_ID)
+        .single();
+      
+      if (userRatingData) {
+        currentRecipeStats.userRating = userRatingData.rating;
+      }
+      
+      const { data: favData } = await supabase
+        .from('recipe_favorites')
+        .select('*')
+        .eq('recipe_id', recipeId)
+        .eq('user_id', window.CURRENT_USER_ID)
+        .single();
+      
+      if (favData) {
+        currentRecipeStats.isFavorited = true;
+      }
+    }
+    
+    updateStatsDisplay();
+    
+  } catch (error) {
+    console.error('Error loading recipe stats:', error);
+  }
+}
+
 async function handleRating(recipeId, rating) {
   if (!isUserLoggedIn()) {
     window.location.href = `/login/?next=${window.location.pathname}`;
@@ -175,8 +223,7 @@ async function handleRating(recipeId, rating) {
   }
   
   try {
-    // Check if user already rated
-    const { data: existingRating, error: checkError } = await supabase
+    const { data: existingRating } = await supabase
       .from('recipe_ratings')
       .select('*')
       .eq('recipe_id', recipeId)
@@ -184,18 +231,16 @@ async function handleRating(recipeId, rating) {
       .single();
     
     if (existingRating) {
-      // Update rating
-      const { error: updateError } = await supabase
+      const { error } = await supabase
         .from('recipe_ratings')
         .update({ rating: rating })
         .eq('recipe_id', recipeId)
         .eq('user_id', window.CURRENT_USER_ID);
       
-      if (updateError) throw updateError;
+      if (error) throw error;
       alert(`Rating updated to ${rating} star${rating > 1 ? 's' : ''}!`);
     } else {
-      // New Rating
-      const { error: insertError } = await supabase
+      const { error } = await supabase
         .from('recipe_ratings')
         .insert({
           recipe_id: recipeId,
@@ -203,7 +248,7 @@ async function handleRating(recipeId, rating) {
           rating: rating
         });
       
-      if (insertError) throw insertError;
+      if (error) throw error;
       alert(`You rated this recipe ${rating} star${rating > 1 ? 's' : ''}!`);
     }
     
@@ -215,7 +260,6 @@ async function handleRating(recipeId, rating) {
   }
 }
 
-// Favortite
 async function handleFavorite(recipeId) {
   if (!isUserLoggedIn()) {
     window.location.href = `/login/?next=${window.location.pathname}`;
@@ -224,7 +268,6 @@ async function handleFavorite(recipeId) {
   
   try {
     if (currentRecipeStats.isFavorited) {
-      // Remove from favorites
       const { error } = await supabase
         .from('recipe_favorites')
         .delete()
@@ -237,7 +280,6 @@ async function handleFavorite(recipeId) {
       currentRecipeStats.favoriteCount--;
       alert('Removed from favorites!');
     } else {
-      // Add to favorites
       const { error } = await supabase
         .from('recipe_favorites')
         .insert({
@@ -260,27 +302,251 @@ async function handleFavorite(recipeId) {
   }
 }
 
-// Comment
-function handleComment(recipeId) {
+// ===== COMMENTS =====
+async function handleComment(recipeId, parentCommentId = null) {
   if (!isUserLoggedIn()) {
     window.location.href = `/login/?next=${window.location.pathname}`;
     return;
   }
   
-  const commentText = document.getElementById('commentInput').value.trim();
+  const inputId = parentCommentId ? `replyInput-${parentCommentId}` : 'commentInput';
+  const commentInput = document.getElementById(inputId);
+  const commentText = commentInput.value.trim();
   
   if (!commentText) {
     alert('Please enter a comment');
     return;
   }
   
-  console.log('Comment on recipe:', recipeId, 'by user:', window.CURRENT_USER_ID, 'text:', commentText);
-  alert('Comment feature coming soon!');
-  
-  document.getElementById('commentInput').value = '';
+  try {
+    const { error } = await supabase
+      .from('recipe_comments')
+      .insert({
+        recipe_id: recipeId,
+        user_id: window.CURRENT_USER_ID,
+        comment: commentText,
+        parent_comment_id: parentCommentId
+      });
+    
+    if (error) throw error;
+    
+    // Update comments count
+    await supabase.rpc('increment_comments_count', { recipe_id: recipeId });
+    
+    commentInput.value = '';
+    
+    // Hide reply form if it was a reply
+    if (parentCommentId) {
+      const replyForm = document.getElementById(`replyForm-${parentCommentId}`);
+      if (replyForm) replyForm.style.display = 'none';
+    }
+    
+    await loadComments(recipeId);
+    alert(parentCommentId ? 'Reply posted successfully!' : 'Comment posted successfully!');
+    
+  } catch (error) {
+    console.error('Error posting comment:', error);
+    alert('Failed to post comment. Please try again.');
+  }
 }
 
-// Share recipe function
+async function loadComments(recipeId) {
+  try {
+    const { data: comments, error } = await supabase
+      .from('recipe_comments')
+      .select(`
+        id,
+        comment,
+        created_at,
+        user_id,
+        parent_comment_id,
+        users (full_name, email)
+      `)
+      .eq('recipe_id', recipeId)
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    displayComments(comments || []);
+    
+  } catch (error) {
+    console.error('Error loading comments:', error);
+  }
+}
+
+function displayComments(comments) {
+  const commentsList = document.querySelector('.comments-list');
+  
+  if (!comments || comments.length === 0) {
+    commentsList.innerHTML = '<p class="no-comments">No comments yet. Be the first to comment!</p>';
+    return;
+  }
+  
+  // Build comment hierarchy
+  const commentMap = new Map();
+  const rootComments = [];
+  
+  comments.forEach(comment => {
+    commentMap.set(comment.id, { ...comment, replies: [] });
+  });
+  
+  comments.forEach(comment => {
+    if (comment.parent_comment_id) {
+      const parent = commentMap.get(comment.parent_comment_id);
+      if (parent) {
+        parent.replies.push(commentMap.get(comment.id));
+      }
+    } else {
+      rootComments.push(commentMap.get(comment.id));
+    }
+  });
+  
+  commentsList.innerHTML = rootComments.map(comment => renderCommentThread(comment)).join('');
+}
+
+function renderCommentThread(comment, depth = 0) {
+  const userName = comment.users?.full_name || comment.users?.email || 'Anonymous';
+  const commentDate = new Date(comment.created_at).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+  
+  const isOwnComment = window.CURRENT_USER_ID && comment.user_id === parseInt(window.CURRENT_USER_ID);
+  const isLoggedIn = isUserLoggedIn();
+  const recipeId = getRecipeIdFromUrl();
+  const hasReplies = comment.replies && comment.replies.length > 0;
+  
+  return `
+    <div class="comment-thread" style="margin-left: ${depth * 40}px;" data-comment-id="${comment.id}">
+      <div class="single-comment ${isOwnComment ? 'own-comment' : ''}">
+        ${hasReplies ? `
+          <button class="collapse-btn" onclick="toggleThread(${comment.id})" title="Collapse thread">
+            <span class="collapse-icon">▼</span>
+          </button>
+        ` : ''}
+        
+        <div class="comment-content-wrapper">
+          <div class="comment-user-info">
+            <span class="comment-avatar">👤</span>
+            <div class="comment-meta">
+              <span class="comment-username">
+                ${userName}
+                ${isOwnComment ? '<span class="you-badge">You</span>' : ''}
+              </span>
+              <span class="comment-timestamp">${commentDate}</span>
+            </div>
+          </div>
+          
+          <p class="comment-content">${escapeHtml(comment.comment)}</p>
+          
+          <div class="comment-actions">
+            ${isLoggedIn ? `
+              <button class="action-btn reply-btn" onclick="showReplyForm(${comment.id})">
+                💬 Reply
+              </button>
+            ` : ''}
+            
+            ${isOwnComment ? `
+              <button class="action-btn delete-btn" onclick="deleteComment(${comment.id})">
+                🗑️ Delete
+              </button>
+            ` : ''}
+            
+            ${hasReplies ? `
+              <span class="reply-count">${comment.replies.length} ${comment.replies.length === 1 ? 'reply' : 'replies'}</span>
+            ` : ''}
+          </div>
+          
+          <div id="replyForm-${comment.id}" class="reply-form" style="display: none;">
+            <textarea 
+              id="replyInput-${comment.id}" 
+              class="reply-input" 
+              placeholder="Write your reply..."
+              rows="2"
+            ></textarea>
+            <div class="reply-form-actions">
+              <button class="submit-reply-btn" onclick="handleComment(${recipeId}, ${comment.id})">
+                Post Reply
+              </button>
+              <button class="cancel-reply-btn" onclick="hideReplyForm(${comment.id})">
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="replies-container" id="replies-${comment.id}">
+        ${hasReplies ? comment.replies.map(reply => renderCommentThread(reply, depth + 1)).join('') : ''}
+      </div>
+    </div>
+  `;
+}
+
+function toggleThread(commentId) {
+  const thread = document.querySelector(`[data-comment-id="${commentId}"]`);
+  const repliesContainer = document.getElementById(`replies-${commentId}`);
+  const collapseIcon = thread.querySelector('.collapse-icon');
+  
+  if (repliesContainer.style.display === 'none') {
+    repliesContainer.style.display = 'block';
+    collapseIcon.textContent = '▼';
+  } else {
+    repliesContainer.style.display = 'none';
+    collapseIcon.textContent = '▶';
+  }
+}
+
+function showReplyForm(commentId) {
+  // Hide all other reply forms
+  document.querySelectorAll('.reply-form').forEach(form => {
+    form.style.display = 'none';
+  });
+  
+  const replyForm = document.getElementById(`replyForm-${commentId}`);
+  if (replyForm) {
+    replyForm.style.display = 'block';
+    const input = document.getElementById(`replyInput-${commentId}`);
+    if (input) input.focus();
+  }
+}
+
+function hideReplyForm(commentId) {
+  const replyForm = document.getElementById(`replyForm-${commentId}`);
+  if (replyForm) {
+    replyForm.style.display = 'none';
+    const input = document.getElementById(`replyInput-${commentId}`);
+    if (input) input.value = '';
+  }
+}
+
+async function deleteComment(commentId) {
+  if (!confirm('Are you sure you want to delete this comment?')) return;
+  
+  try {
+    const recipeId = getRecipeIdFromUrl();
+    
+    const { error } = await supabase
+      .from('recipe_comments')
+      .delete()
+      .eq('id', commentId)
+      .eq('user_id', window.CURRENT_USER_ID);
+    
+    if (error) throw error;
+    
+    await supabase.rpc('decrement_comments_count', { recipe_id: parseInt(recipeId) });
+    await loadComments(recipeId);
+    alert('Comment deleted successfully!');
+    
+  } catch (error) {
+    console.error('Error deleting comment:', error);
+    alert('Failed to delete comment. Please try again.');
+  }
+}
+
+// ===== SHARE FUNCTION =====
 function shareRecipe() {
   const url = window.location.href;
   
@@ -299,91 +565,8 @@ function shareRecipe() {
   }
 }
 
-function getRecipeIdFromUrl() {
-  const pathname = window.location.pathname;
-  console.log("Current pathname:", pathname);
-
-  const match = pathname.match(/\/recipe\/(\d+)/);
-  
-  if (match && match[1]) {
-    const recipeId = match[1];
-    console.log("Recipe ID found:", recipeId);
-    return recipeId;
-  }
-  
-  console.error("Could not extract recipe ID from URL");
-  return null;
-}
-
-// Format ingredients
-function formatIngredients(ingredientsData) {
-  console.log("Raw ingredients data:", ingredientsData);
-  
-  try {
-    const ingredients = typeof ingredientsData === 'string' 
-      ? JSON.parse(ingredientsData) 
-      : ingredientsData;
-    
-    console.log("Parsed ingredients:", ingredients);
-    
-    if (Array.isArray(ingredients)) {
-      return ingredients.map(ing => {
-        if (typeof ing === 'string') {
-          return ing;
-        } else if (ing.item && ing.amount) {
-          return `${ing.amount} ${ing.item}`;
-        }
-        return String(ing);
-      });
-    }
-    return [];
-  } catch (e) {
-    console.error('Error parsing ingredients:', e);
-    return [];
-  }
-}
-
-// Format instructions
-function formatInstructions(instructionsData) {
-  console.log("Raw instructions data:", instructionsData);
-  
-  if (!instructionsData) return [];
-  
-  const steps = instructionsData
-    .split(/(?=\d+\.\s+)/)
-    .filter(step => step.trim())
-    .map(step => {
-      let cleanStep = step.replace(/^\d+\.\s+/, '').trim();
-      cleanStep = cleanStep.replace(/^Step\s+\d+:\s*/i, '').trim();
-      return cleanStep.replace(/\n/g, '<br>');
-    });
-  
-  console.log("Parsed instructions:", steps);
-  return steps;
-}
-
-function getCuisineTagClass(cuisine) {
-  if (!cuisine) return 'tag-other';
-  const cuisineLower = cuisine.toLowerCase();
-  if (cuisineLower.includes('italian')) return 'tag-italian';
-  if (cuisineLower.includes('asian') || cuisineLower.includes('filipino')) return 'tag-asian';
-  if (cuisineLower.includes('dessert')) return 'tag-dessert';
-  if (cuisineLower.includes('mexican')) return 'tag-mexican';
-  if (cuisineLower.includes('american')) return 'tag-american';
-  if (cuisineLower.includes('french')) return 'tag-italian';
-  return 'tag-other';
-}
-
-function calculateDifficulty(cookTime) {
-  const time = parseInt(cookTime);
-  if (time <= 15) return { level: 'Easy', class: 'difficulty-easy' };
-  if (time <= 30) return { level: 'Medium', class: 'difficulty-medium' };
-  return { level: 'Hard', class: 'difficulty-hard' };
-}
-
+// ===== RENDER RECIPE =====
 function renderRecipe(recipe) {
-  console.log("Rendering recipe:", recipe);
-  
   const container = document.getElementById('recipeDetailContainer');
   
   const ingredients = formatIngredients(recipe.ingredients);
@@ -397,176 +580,7 @@ function renderRecipe(recipe) {
   const recipeId = recipe.id;
   const isLoggedIn = isUserLoggedIn();
   
-  console.log("Recipe ID:", recipeId, "User logged in:", isLoggedIn);
-  
   const html = `
-    <style>
-      .user-rating-star {
-        cursor: pointer;
-        font-size: 2.5rem;
-        opacity: 0.3;
-        transition: all 0.2s ease;
-        display: inline-block;
-        margin: 0 4px;
-      }
-
-      .user-rating-star.hovered,
-      .user-rating-star.selected {
-        opacity: 1;
-      }
-
-      .user-rating-star:hover {
-        transform: scale(1.15);
-      }
-
-      .db-star {
-        font-size: 1.8rem;
-        margin: 0 2px;
-      }
-
-      .db-star.filled {
-        opacity: 1;
-      }
-
-      .db-star.empty {
-        opacity: 0.3;
-      }
-
-      .db-star.half {
-        opacity: 0.7;
-      }
-
-      .favorite-btn {
-        position: relative;
-        overflow: hidden;
-        transition: all 0.3s ease;
-      }
-
-      .favorite-btn.favorited {
-        background: linear-gradient(135deg, #fff9e6 0%, #fff3d6 100%);
-        border-color: #ffeb3b;
-        box-shadow: 0 2px 8px rgba(255, 235, 59, 0.3);
-      }
-
-      .favorite-btn.favorited .btn-icon {
-        animation: heartBeat 0.6s ease;
-        filter: drop-shadow(0 0 4px rgba(255, 193, 7, 0.5));
-      }
-
-      .favorite-btn:active .btn-icon {
-        animation: pop 0.3s ease;
-      }
-
-      @keyframes heartBeat {
-        0%, 100% { transform: scale(1); }
-        25% { transform: scale(1.3); }
-        50% { transform: scale(1.1); }
-        75% { transform: scale(1.25); }
-      }
-
-      @keyframes pop {
-        0% { transform: scale(1); }
-        50% { transform: scale(1.4); }
-        100% { transform: scale(1); }
-      }
-
-      .interaction-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-      }
-
-      .interaction-btn:active {
-        transform: translateY(0);
-      }
-
-      .rating-stats-section {
-        background: #f8f9fa;
-        padding: 2rem;
-        border-radius: 12px;
-        margin: 2rem 0;
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 2rem;
-        align-items: start;
-      }
-
-      .user-rating-container {
-        transition: all 0.3s ease;
-        padding: 1rem;
-        border-radius: 8px;
-      }
-
-      .user-rating-container.has-rated {
-        background: linear-gradient(135deg, #e8f5e9 0%, #f1f8f4 100%);
-        border: 2px solid #81c784;
-        box-shadow: 0 2px 8px rgba(129, 199, 132, 0.2);
-      }
-
-      .user-rating-container.has-rated .rating-title {
-        color: #2e7d32;
-      }
-
-      .db-rating-container {
-        padding: 1rem;
-      }
-
-      .rating-title {
-        font-size: 1.1rem;
-        font-weight: 600;
-        margin-bottom: 0.75rem;
-        color: #333;
-        line-height: 1.2;
-        min-height: 1.32rem;
-      }
-
-      .user-rating-stars {
-        margin-top: 0.5rem;
-      }
-
-
-
-      .rating-title {
-        font-size: 1.1rem;
-        font-weight: 600;
-        margin-bottom: 0.5rem;
-        color: #333;
-        line-height: 1.2;
-        min-height: 1.32rem;
-      }
-
-      .rating-login-note {
-        font-size: 0.85rem;
-        color: #666;
-        margin-top: 0.5rem;
-        font-style: italic;
-      }
-
-      .rating-score {
-        font-size: 1.2rem;
-        font-weight: bold;
-        color: #333;
-        margin: 0 0.5rem;
-      }
-
-      .rating-count {
-        font-size: 0.9rem;
-        color: #666;
-      }
-
-      .favorite-count {
-        background: #fff;
-        padding: 2px 8px;
-        border-radius: 12px;
-        font-size: 0.9rem;
-        margin-left: 4px;
-      }
-
-      @media (max-width: 768px) {
-        .rating-stats-section {
-          grid-template-columns: 1fr;
-        }
-      }
-    </style>
     <div class="recipe-header">
       <div class="recipe-image-section">
         <img src="${imageUrl}" alt="${recipe.title}" class="recipe-main-image" onerror="this.src='${defaultImage}'">
@@ -579,7 +593,6 @@ function renderRecipe(recipe) {
         </div>
         
         <h1 class="recipe-title">${recipe.title}</h1>
-        
         <p class="recipe-description">${recipe.description || 'No description available'}</p>
         
         <div class="recipe-details-grid">
@@ -719,25 +732,23 @@ function renderRecipe(recipe) {
   `;
   
   container.innerHTML = html;
-  console.log("Recipe rendered successfully");
   
-  loadRecipeStats(recipeId);
+  // Load stats and comments
+  setTimeout(() => {
+    loadRecipeStats(recipeId);
+    loadComments(recipeId);
+  }, 0);
 }
 
-// Fetch and display recipe
+// ===== LOAD RECIPE =====
 async function loadRecipe() {
-  console.log("=== Loading Recipe ===");
-  
   const recipeId = getRecipeIdFromUrl();
   
   if (!recipeId) {
-    console.error("No recipe ID found");
     document.getElementById('recipeDetailContainer').innerHTML = 
       '<div class="error">Recipe ID not found in URL</div>';
     return;
   }
-  
-  console.log("Fetching recipe with ID:", recipeId);
   
   try {
     const { data, error } = await supabase
@@ -746,21 +757,14 @@ async function loadRecipe() {
       .eq('id', recipeId)
       .single();
     
-    console.log("Supabase response:", { data, error });
-    
-    if (error) {
-      console.error("Supabase error:", error);
-      throw error;
-    }
+    if (error) throw error;
     
     if (!data) {
-      console.error("No recipe data returned");
       document.getElementById('recipeDetailContainer').innerHTML = 
         '<div class="error">Recipe not found</div>';
       return;
     }
     
-    console.log("Recipe data received:", data);
     renderRecipe(data);
     
   } catch (error) {
@@ -770,10 +774,5 @@ async function loadRecipe() {
   }
 }
 
-// Load recipe when page loads
-console.log("Setting up DOMContentLoaded listener");
-document.addEventListener('DOMContentLoaded', () => {
-  console.log("DOM Content Loaded - Starting recipe load");
-  console.log("Current User ID:", window.CURRENT_USER_ID);
-  loadRecipe();
-});
+// ===== INITIALIZE =====
+document.addEventListener('DOMContentLoaded', loadRecipe);
