@@ -48,10 +48,15 @@
                 <div class="details-section">
                     <label>Recipe Details</label>
                     <div class="details-grid">
-                        <input type="number" id="cookTime" placeholder="Cook Time (mins)" class="detail-input">
-                        <input type="text" id="servings" placeholder="Servings" class="detail-input">
-                        <input type="text" id="prepTime" placeholder="Prep Time" class="detail-input">
-                        <input type="text" id="difficulty" placeholder="Difficulty" class="detail-input">
+                        <input type="number" id="cookTime" placeholder="Cook Time (mins)" class="detail-input" min="0">
+                        <input type="number" id="servings" placeholder="Servings" class="detail-input" min="1">
+                        <input type="number" id="prepTime" placeholder="Prep Time (mins)" class="detail-input" min="0">
+                        <select id="difficulty" class="detail-input">
+                            <option value="" disabled selected>Difficulty</option>
+                            <option value="Easy">Easy</option>
+                            <option value="Medium">Medium</option>
+                            <option value="Hard">Hard</option>
+                        </select>
                     </div>
                 </div>
 

@@ -32,6 +32,9 @@ DEBUG = True
 
 ALLOWED_HOSTS = [
     "recipe-share-4f7x.onrender.com",
+    '127.0.0.1',
+    'localhost'
+
 ]
 
 
