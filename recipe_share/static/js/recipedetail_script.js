@@ -218,7 +218,7 @@ async function loadRecipeStats(recipeId) {
 
 async function handleRating(recipeId, rating) {
   if (!isUserLoggedIn()) {
-    window.location.href = `/login/?next=${window.location.pathname}`;
+    window.location.href = `/auth/login/?next=${window.location.pathname}`;
     return;
   }
   
@@ -262,7 +262,7 @@ async function handleRating(recipeId, rating) {
 
 async function handleFavorite(recipeId) {
   if (!isUserLoggedIn()) {
-    window.location.href = `/login/?next=${window.location.pathname}`;
+    window.location.href = `/auth/login/?next=${window.location.pathname}`;
     return;
   }
   
@@ -305,7 +305,7 @@ async function handleFavorite(recipeId) {
 // ===== COMMENTS =====
 async function handleComment(recipeId, parentCommentId = null) {
   if (!isUserLoggedIn()) {
-    window.location.href = `/login/?next=${window.location.pathname}`;
+    window.location.href = `/auth/login/?next=${window.location.pathname}`;
     return;
   }
   
@@ -721,7 +721,7 @@ function renderRecipe(recipe) {
         </div>
       ` : `
         <div class="comment-login-prompt">
-          <p>🔒 Please <a href="/login/?next=${window.location.pathname}">login</a> to leave a comment</p>
+          <p>🔒 Please <a href="/auth/login/?next=${encodeURIComponent(window.location.pathname)}">login</a> to leave a comment</p>
         </div>
       `}
       
